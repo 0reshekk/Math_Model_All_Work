@@ -1,0 +1,228 @@
+﻿<Window
+    x:Class="Math_Model_All_Work.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Math_Model_All_Work"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="MainWindow"
+    Width="800"
+    Height="450"
+    mc:Ignorable="d">
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="390" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Margin="0,0,16,0">
+            <TextBlock
+                Margin="0,0,0,6"
+                FontWeight="Bold"
+                Text="Тип задачи" />
+            <ComboBox
+                x:Name="TaskBox"
+                Margin="0,0,0,12"
+                SelectedIndex="0">
+                <ComboBoxItem>1. Система массового обслуживания</ComboBoxItem>
+                <ComboBoxItem>2. Транспортная задача: северо-западный угол</ComboBoxItem>
+                <ComboBoxItem>3. Транспортная задача: минимальный элемент</ComboBoxItem>
+                <ComboBoxItem>4. Симплекс-метод</ComboBoxItem>
+            </ComboBox>
+
+            <!--  Блок СМО  -->
+            <StackPanel x:Name="SmoPanel">
+                <TextBlock
+                    Margin="0,8,0,6"
+                    FontWeight="Bold"
+                    Text="Параметры СМО" />
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontWeight="Bold"
+                    Text="Режим расчета" />
+                <ComboBox
+                    x:Name="SmoModeBox"
+                    Margin="0,0,0,12"
+                    SelectedIndex="0">
+                    <ComboBoxItem>1. Универсальный: ограниченная очередь (M/M/n/K)</ComboBoxItem>
+                    <ComboBoxItem>2. Одноканальная с отказами (M/M/1/1)</ComboBoxItem>
+                    <ComboBoxItem>3. Многоканальная с отказами (M/M/n/n)</ComboBoxItem>
+                    <ComboBoxItem>4. Одноканальная с бесконечной очередью (M/M/1)</ComboBoxItem>
+                    <ComboBoxItem>5. Многоканальная с бесконечной очередью (M/M/n)</ComboBoxItem>
+                    <ComboBoxItem>6. Одноканальная с фиксированным временем обслуживания (M/D/1)</ComboBoxItem>
+                    <ComboBoxItem>7. Ограниченное время ожидания</ComboBoxItem>
+                </ComboBox>
+                <UniformGrid
+                    Margin="0,0,0,12"
+                    Columns="2"
+                    Rows="5">
+                    <TextBlock VerticalAlignment="Center" Text="λ (интенсивность заявок):" />
+                    <TextBox
+                        x:Name="LambdaBox"
+                        Margin="6,4"
+                        Text="2" />
+
+                    <TextBlock VerticalAlignment="Center" Text="μ (интенс. обслуживания):" />
+                    <TextBox
+                        x:Name="MuBox"
+                        Margin="6,4"
+                        Text="3" />
+
+                    <TextBlock
+                        x:Name="TserviceLabel"
+                        VerticalAlignment="Center"
+                        Text="t обслуживания (сек):" />
+                    <TextBox
+                        x:Name="TserviceBox"
+                        Margin="6,4"
+                        Text="0" />
+
+                    <TextBlock
+                        x:Name="NLabel"
+                        VerticalAlignment="Center"
+                        Text="n (каналов):" />
+                    <TextBox
+                        x:Name="NBox"
+                        Margin="6,4"
+                        Text="1" />
+
+                    <TextBlock
+                        x:Name="KLabel"
+                        VerticalAlignment="Center"
+                        Text="K (макс. размер системы):" />
+                    <TextBox
+                        x:Name="KBox"
+                        Margin="6,4"
+                        Text="2" />
+                </UniformGrid>
+
+                <TextBlock
+                    x:Name="SmoHintText"
+                    Margin="0,0,0,12"
+                    FontSize="12"
+                    Foreground="Gray"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!--  Блок транспортной задачи  -->
+            <StackPanel x:Name="TransportPanel" Visibility="Collapsed">
+                <TextBlock
+                    Margin="0,8,0,6"
+                    FontWeight="Bold"
+                    Text="Матрица стоимости" />
+                <DataGrid
+                    Name="CostMatrix"
+                    Width="320"
+                    Height="155"
+                    Margin="0,0,0,12"
+                    AutoGenerateColumns="False"
+                    Background="#cad8fe">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Binding="{Binding Path=V1}" Header="B1" />
+                        <DataGridTextColumn Binding="{Binding Path=V2}" Header="B2" />
+                        <DataGridTextColumn Binding="{Binding Path=V3}" Header="B3" />
+                        <DataGridTextColumn Binding="{Binding Path=V4}" Header="B4" />
+                        <DataGridTextColumn Binding="{Binding Path=V5}" Header="B5" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontWeight="Bold"
+                    Text="Запасы (поставщики)" />
+                <TextBox
+                    x:Name="SupplyInput"
+                    Margin="0,0,0,12"
+                    Text="30,40,20"
+                    ToolTip="Введите числа через запятую" />
+
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontWeight="Bold"
+                    Text="Потребности (потребители)" />
+                <TextBox
+                    x:Name="DemandInput"
+                    Margin="0,0,0,12"
+                    Text="20,30,25,15,0"
+                    ToolTip="Введите числа через запятую" />
+            </StackPanel>
+
+            <!--  Блок симплекс  -->
+            <StackPanel x:Name="SimplexPanel" Visibility="Collapsed">
+                <TextBlock
+                    Margin="0,8,0,6"
+                    FontWeight="Bold"
+                    Text="Целевая функция" />
+                <TextBox
+                    x:Name="ObjectiveInput"
+                    Margin="0,0,0,12"
+                    Text="3 5" />
+
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontWeight="Bold"
+                    Text="Матрица ограничений A" />
+                <TextBox
+                    x:Name="MatrixInput"
+                    Height="120"
+                    Margin="0,0,0,12"
+                    AcceptsReturn="True"
+                    Text="1 0&#10;0 2&#10;3 2"
+                    VerticalScrollBarVisibility="Auto" />
+
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontWeight="Bold"
+                    Text="Правая часть b" />
+                <TextBox
+                    x:Name="BInput"
+                    Margin="0,0,0,12"
+                    Text="4 12 18" />
+
+                <TextBlock
+                    Margin="0,0,0,12"
+                    FontSize="12"
+                    Foreground="Gray"
+                    TextWrapping="Wrap">
+                    Формат: max Z, ограничения только вида ≤, правая часть b должна быть неотрицательной.
+                </TextBlock>
+            </StackPanel>
+
+            <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
+                <Button
+                    x:Name="CalcBtn"
+                    Width="140"
+                    Height="36"
+                    Click="CalcBtn_Click"
+                    Content="Рассчитать" />
+                <Button
+                    Width="110"
+                    Height="36"
+                    Margin="12,0,0,0"
+                    Click="Clear_Click"
+                    Content="Очистить" />
+                <Button
+                    Width="110"
+                    Height="36"
+                    Margin="12,0,0,0"
+                    Click="Export_Click"
+                    Content="Экспорт" />
+            </StackPanel>
+        </StackPanel>
+
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock
+                    Margin="0,0,0,8"
+                    FontSize="18"
+                    FontWeight="Bold"
+                    Text="Результаты" />
+                <TextBlock
+                    x:Name="ResultText"
+                    FontFamily="Consolas"
+                    FontSize="14"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
