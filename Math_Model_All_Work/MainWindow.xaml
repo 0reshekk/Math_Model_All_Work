@@ -18,30 +18,22 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- ===================== ЛЕВАЯ КОЛОНКА: НАСТРОЙКА ШАБЛОНА ===================== -->
+        <!--  ===================== ЛЕВАЯ КОЛОНКА: НАСТРОЙКА ШАБЛОНА =====================  -->
         <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <!-- ===== ОБЩИЙ БЛОК: ВЫБОР ТИПА ЗАДАЧИ ===== -->
-                <Border Padding="12" Background="#F5F7FB" BorderBrush="#D7DEEA" BorderThickness="1" CornerRadius="8">
+                <!--  ===== ОБЩИЙ БЛОК: ВЫБОР ТИПА ЗАДАЧИ =====  -->
+                <Border
+                    Padding="12"
+                    Background="#F5F7FB"
+                    BorderBrush="#D7DEEA"
+                    BorderThickness="1"
+                    CornerRadius="8">
                     <StackPanel>
-                        <TextBlock
-                            Margin="0,0,0,6"
-                            FontSize="18"
-                            FontWeight="Bold"
-                            Text="Шаблон приложения" />
-                        <TextBlock
-                            Margin="0,0,0,12"
-                            Foreground="#4E5B70"
-                            Text="Оставьте только нужный блок задачи, а общий функционал импорта, экспорта и очистки можно использовать повторно."
-                            TextWrapping="Wrap" />
-
                         <TextBlock
                             Margin="0,0,0,6"
                             FontWeight="Bold"
                             Text="Тип задачи" />
-                        <ComboBox
-                            x:Name="TaskBox"
-                            SelectedIndex="0">
+                        <ComboBox x:Name="TaskBox" SelectedIndex="0">
                             <ComboBoxItem>1. Система массового обслуживания</ComboBoxItem>
                             <ComboBoxItem>2. Транспортная задача: северо-западный угол</ComboBoxItem>
                             <ComboBoxItem>3. Транспортная задача: минимальный элемент</ComboBoxItem>
@@ -50,7 +42,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ===== БЛОК ЗАДАЧИ: СМО ===== -->
+                <!--  ===== БЛОК ЗАДАЧИ: СМО =====  -->
                 <Border
                     x:Name="SmoPanel"
                     Margin="0,12,0,0"
@@ -134,7 +126,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ===== БЛОК ЗАДАЧИ: ТРАНСПОРТНАЯ ===== -->
+                <!--  ===== БЛОК ЗАДАЧИ: ТРАНСПОРТНАЯ =====  -->
                 <Border
                     x:Name="TransportPanel"
                     Margin="0,12,0,0"
@@ -192,7 +184,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ===== БЛОК ЗАДАЧИ: СИМПЛЕКС ===== -->
+                <!--  ===== БЛОК ЗАДАЧИ: СИМПЛЕКС =====  -->
                 <Border
                     x:Name="SimplexPanel"
                     Margin="0,12,0,0"
@@ -247,7 +239,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ===== ОБЩИЙ БЛОК: ДЕЙСТВИЯ С ШАБЛОНОМ ===== -->
+                <!--  ===== ОБЩИЙ БЛОК: ДЕЙСТВИЯ С ШАБЛОНОМ =====  -->
                 <Border
                     Margin="0,12,0,0"
                     Padding="12"
@@ -264,37 +256,32 @@
                         <WrapPanel ItemHeight="38" ItemWidth="185">
                             <Button
                                 x:Name="CalcBtn"
+                                Height="36"
                                 Margin="0,0,8,8"
                                 Click="CalcBtn_Click"
-                                Content="Рассчитать"
-                                Height="36" />
+                                Content="Рассчитать" />
                             <Button
+                                Height="36"
                                 Margin="0,0,8,8"
                                 Click="ImportExcel_Click"
-                                Content="Импорт Excel"
-                                Height="36" />
+                                Content="Импорт Excel" />
                             <Button
+                                Height="36"
                                 Margin="0,0,8,8"
                                 Click="Export_Click"
-                                Content="Экспорт"
-                                Height="36" />
+                                Content="Экспорт" />
                             <Button
+                                Height="36"
                                 Margin="0,0,8,8"
                                 Click="Clear_Click"
-                                Content="Сбросить"
-                                Height="36" />
+                                Content="Сбросить" />
                         </WrapPanel>
-                        <TextBlock
-                            FontSize="12"
-                            Foreground="#5B6474"
-                            Text="Excel-файл хранит выбранный тип задачи, поля ввода, матрицу стоимости и текущий текст результата."
-                            TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </StackPanel>
         </ScrollViewer>
 
-        <!-- ===================== ПРАВАЯ КОЛОНКА: РЕЗУЛЬТАТЫ ===================== -->
+        <!--  ===================== ПРАВАЯ КОЛОНКА: РЕЗУЛЬТАТЫ =====================  -->
         <Border
             Grid.Column="2"
             Padding="12"
@@ -308,7 +295,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- ===== ОБЩИЙ БЛОК: РЕЗУЛЬТАТЫ ===== -->
+                <!--  ===== ОБЩИЙ БЛОК: РЕЗУЛЬТАТЫ =====  -->
                 <StackPanel Grid.Row="0" Margin="0,0,0,8">
                     <TextBlock
                         FontSize="20"

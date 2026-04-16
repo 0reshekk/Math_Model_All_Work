@@ -381,7 +381,7 @@ namespace Math_Model_All_Work
         #endregion
 
         // =========================
-        // СМО
+        #region // СМО
         // =========================
         private void SolveSmo()
         {
@@ -665,9 +665,10 @@ namespace Math_Model_All_Work
 
             return result;
         }
+        #endregion
 
         // =========================
-        // Транспортная задача
+        #region // Транспортная задача
         // =========================
         private void SolveTransportNorthWest()
         {
@@ -848,8 +849,10 @@ namespace Math_Model_All_Work
             return sb.ToString();
         }
 
+        #endregion
+
         // =========================
-        // Симплекс
+        #region // Симплекс
         // =========================
         private void SolveSimplexTask()
         {
@@ -999,6 +1002,8 @@ namespace Math_Model_All_Work
                     tableau[i, j] -= factor * tableau[pivotRow, j];
             }
         }
+        #endregion
+
 
         // =========================
         // Вспомогательное
