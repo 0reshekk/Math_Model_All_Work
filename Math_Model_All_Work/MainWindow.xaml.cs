@@ -1113,23 +1113,9 @@ namespace Math_Model_All_Work
 
     internal static class ExcelTemplateService
     {
-        private const string InputSheetName = "Ввод";
-        private const string ResultSheetName = "Решение";
-        private const string LegacyMetaSheetName = "Meta";
-        private const string LegacyInputsSheetName = "Inputs";
-        private const string LegacyTransportSheetName = "TransportCost";
-        private const string LegacyResultSheetName = "Result";
-
+        private const string FormatKey = "__format";
+        private const string FormatValue = "MathModelAllWork.Excel.v1";
         private static readonly XNamespace SpreadsheetNamespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-        private static readonly XNamespace RelationshipNamespace = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-        private static readonly XNamespace PackageRelationshipNamespace = "http://schemas.openxmlformats.org/package/2006/relationships";
-        private static readonly XNamespace ContentTypeNamespace = "http://schemas.openxmlformats.org/package/2006/content-types";
-        private static readonly XNamespace CorePropertyNamespace = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties";
-        private static readonly XNamespace DcNamespace = "http://purl.org/dc/elements/1.1/";
-        private static readonly XNamespace DctermsNamespace = "http://purl.org/dc/terms/";
-        private static readonly XNamespace DcmitypeNamespace = "http://purl.org/dc/dcmitype/";
-        private static readonly XNamespace XsiNamespace = "http://www.w3.org/2001/XMLSchema-instance";
-        private static readonly XNamespace ExtendedPropertyNamespace = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties";
 
         public static void Export(string filePath, AppTemplateData data)
         {
@@ -1139,16 +1125,53 @@ namespace Math_Model_All_Work
             if (File.Exists(filePath))
                 File.Delete(filePath);
 
+            var rows = new List<string[]>
+            {
+                Row(FormatKey, FormatValue),
+                Row(nameof(AppTemplateData.TaskIndex), data.TaskIndex),
+                Row(nameof(AppTemplateData.TaskName), data.TaskName),
+                Row(nameof(AppTemplateData.SmoModeIndex), data.SmoModeIndex),
+                Row(nameof(AppTemplateData.SmoModeName), data.SmoModeName),
+                Row(nameof(AppTemplateData.Lambda), data.Lambda),
+                Row(nameof(AppTemplateData.Mu), data.Mu),
+                Row(nameof(AppTemplateData.ServiceTime), data.ServiceTime),
+                Row(nameof(AppTemplateData.Channels), data.Channels),
+                Row(nameof(AppTemplateData.SystemCapacity), data.SystemCapacity),
+                Row(nameof(AppTemplateData.Supply), data.Supply),
+                Row(nameof(AppTemplateData.Demand), data.Demand),
+                Row(nameof(AppTemplateData.Objective), data.Objective),
+                Row(nameof(AppTemplateData.Matrix), data.Matrix),
+                Row(nameof(AppTemplateData.B), data.B),
+                Row(nameof(AppTemplateData.ResultText), data.ResultText),
+                Row(nameof(AppTemplateData.CostRows), SerializeCostRows(data.CostRows))
+            };
+
             using (var archive = ZipFile.Open(filePath, ZipArchiveMode.Create))
             {
-                WriteEntry(archive, "[Content_Types].xml", BuildContentTypesXml());
-                WriteEntry(archive, "_rels/.rels", BuildRootRelationshipsXml());
-                WriteEntry(archive, "docProps/core.xml", BuildCorePropertiesXml());
-                WriteEntry(archive, "docProps/app.xml", BuildAppPropertiesXml());
-                WriteEntry(archive, "xl/workbook.xml", BuildWorkbookXml());
-                WriteEntry(archive, "xl/_rels/workbook.xml.rels", BuildWorkbookRelationshipsXml());
-                WriteEntry(archive, "xl/worksheets/sheet1.xml", BuildWorksheetXml(BuildInputRows(data)));
-                WriteEntry(archive, "xl/worksheets/sheet2.xml", BuildWorksheetXml(BuildResultRows(data)));
+                WriteEntry(archive, "[Content_Types].xml",
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                    "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">" +
+                    "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\" />" +
+                    "<Default Extension=\"xml\" ContentType=\"application/xml\" />" +
+                    "<Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\" />" +
+                    "<Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\" />" +
+                    "</Types>");
+                WriteEntry(archive, "_rels/.rels",
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                    "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">" +
+                    "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\" />" +
+                    "</Relationships>");
+                WriteEntry(archive, "xl/workbook.xml",
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                    "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">" +
+                    "<sheets><sheet name=\"Data\" sheetId=\"1\" r:id=\"rId1\" /></sheets>" +
+                    "</workbook>");
+                WriteEntry(archive, "xl/_rels/workbook.xml.rels",
+                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                    "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">" +
+                    "<Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\" />" +
+                    "</Relationships>");
+                WriteEntry(archive, "xl/worksheets/sheet1.xml", BuildWorksheetXml(rows));
             }
         }
 
@@ -1156,326 +1179,31 @@ namespace Math_Model_All_Work
         {
             using (var archive = ZipFile.OpenRead(filePath))
             {
-                Dictionary<string, string> workbookSheets = GetWorkbookSheetMap(archive);
-                IReadOnlyList<string> sharedStrings = GetSharedStrings(archive);
+                Dictionary<string, string> rows = ReadRows(archive);
 
-                if (workbookSheets.ContainsKey(InputSheetName))
-                    return ImportReadableWorkbook(archive, workbookSheets, sharedStrings);
+                if (!string.Equals(ReadString(rows, FormatKey), FormatValue, StringComparison.Ordinal))
+                    throw new InvalidDataException("Поддерживается только Excel-файл, экспортированный этой программой в новом упрощенном формате.");
 
-                return ImportLegacyWorkbook(archive, workbookSheets, sharedStrings);
-            }
-        }
-
-        private static string BuildContentTypesXml()
-        {
-            var document = new XDocument(
-                new XElement(ContentTypeNamespace + "Types",
-                    new XElement(ContentTypeNamespace + "Default",
-                        new XAttribute("Extension", "rels"),
-                        new XAttribute("ContentType", "application/vnd.openxmlformats-package.relationships+xml")),
-                    new XElement(ContentTypeNamespace + "Default",
-                        new XAttribute("Extension", "xml"),
-                        new XAttribute("ContentType", "application/xml")),
-                    new XElement(ContentTypeNamespace + "Override",
-                        new XAttribute("PartName", "/xl/workbook.xml"),
-                        new XAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml")),
-                    new XElement(ContentTypeNamespace + "Override",
-                        new XAttribute("PartName", "/xl/worksheets/sheet1.xml"),
-                        new XAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")),
-                    new XElement(ContentTypeNamespace + "Override",
-                        new XAttribute("PartName", "/xl/worksheets/sheet2.xml"),
-                        new XAttribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")),
-                    new XElement(ContentTypeNamespace + "Override",
-                        new XAttribute("PartName", "/docProps/core.xml"),
-                        new XAttribute("ContentType", "application/vnd.openxmlformats-package.core-properties+xml")),
-                    new XElement(ContentTypeNamespace + "Override",
-                        new XAttribute("PartName", "/docProps/app.xml"),
-                        new XAttribute("ContentType", "application/vnd.openxmlformats-officedocument.extended-properties+xml"))));
-
-            return document.Declaration + Environment.NewLine + document;
-        }
-
-        private static string BuildRootRelationshipsXml()
-        {
-            var document = new XDocument(
-                new XElement(PackageRelationshipNamespace + "Relationships",
-                    new XElement(PackageRelationshipNamespace + "Relationship",
-                        new XAttribute("Id", "rId1"),
-                        new XAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"),
-                        new XAttribute("Target", "xl/workbook.xml")),
-                    new XElement(PackageRelationshipNamespace + "Relationship",
-                        new XAttribute("Id", "rId2"),
-                        new XAttribute("Type", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"),
-                        new XAttribute("Target", "docProps/core.xml")),
-                    new XElement(PackageRelationshipNamespace + "Relationship",
-                        new XAttribute("Id", "rId3"),
-                        new XAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"),
-                        new XAttribute("Target", "docProps/app.xml"))));
-
-            return document.Declaration + Environment.NewLine + document;
-        }
-
-        private static string BuildCorePropertiesXml()
-        {
-            string timestamp = DateTime.UtcNow.ToString("s", CultureInfo.InvariantCulture) + "Z";
-
-            var document = new XDocument(
-                new XElement(CorePropertyNamespace + "coreProperties",
-                    new XAttribute(XNamespace.Xmlns + "cp", CorePropertyNamespace),
-                    new XAttribute(XNamespace.Xmlns + "dc", DcNamespace),
-                    new XAttribute(XNamespace.Xmlns + "dcterms", DctermsNamespace),
-                    new XAttribute(XNamespace.Xmlns + "dcmitype", DcmitypeNamespace),
-                    new XAttribute(XNamespace.Xmlns + "xsi", XsiNamespace),
-                    new XElement(DcNamespace + "creator", "Math_Model_All_Work"),
-                    new XElement(CorePropertyNamespace + "lastModifiedBy", "Math_Model_All_Work"),
-                    new XElement(DctermsNamespace + "created",
-                        new XAttribute(XsiNamespace + "type", "dcterms:W3CDTF"),
-                        timestamp),
-                    new XElement(DctermsNamespace + "modified",
-                        new XAttribute(XsiNamespace + "type", "dcterms:W3CDTF"),
-                        timestamp)));
-
-            return document.Declaration + Environment.NewLine + document;
-        }
-
-        private static string BuildAppPropertiesXml()
-        {
-            var document = new XDocument(
-                new XElement(ExtendedPropertyNamespace + "Properties",
-                    new XAttribute(XNamespace.Xmlns + "vt", "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"),
-                    new XElement(ExtendedPropertyNamespace + "Application", "Math_Model_All_Work"),
-                    new XElement(ExtendedPropertyNamespace + "DocSecurity", "0"),
-                    new XElement(ExtendedPropertyNamespace + "ScaleCrop", "false"),
-                    new XElement(ExtendedPropertyNamespace + "HeadingPairs"),
-                    new XElement(ExtendedPropertyNamespace + "TitlesOfParts"),
-                    new XElement(ExtendedPropertyNamespace + "Company", string.Empty),
-                    new XElement(ExtendedPropertyNamespace + "LinksUpToDate", "false"),
-                    new XElement(ExtendedPropertyNamespace + "SharedDoc", "false"),
-                    new XElement(ExtendedPropertyNamespace + "HyperlinksChanged", "false"),
-                    new XElement(ExtendedPropertyNamespace + "AppVersion", "1.0")));
-
-            return document.Declaration + Environment.NewLine + document;
-        }
-
-        private static string BuildWorkbookXml()
-        {
-            var document = new XDocument(
-                new XElement(SpreadsheetNamespace + "workbook",
-                    new XAttribute(XNamespace.Xmlns + "r", RelationshipNamespace),
-                    new XElement(SpreadsheetNamespace + "sheets",
-                        new XElement(SpreadsheetNamespace + "sheet",
-                            new XAttribute("name", InputSheetName),
-                            new XAttribute("sheetId", "1"),
-                            new XAttribute(RelationshipNamespace + "id", "rId1")),
-                        new XElement(SpreadsheetNamespace + "sheet",
-                            new XAttribute("name", ResultSheetName),
-                            new XAttribute("sheetId", "2"),
-                            new XAttribute(RelationshipNamespace + "id", "rId2")))));
-
-            return document.Declaration + Environment.NewLine + document;
-        }
-
-        private static string BuildWorkbookRelationshipsXml()
-        {
-            var document = new XDocument(
-                new XElement(PackageRelationshipNamespace + "Relationships",
-                    new XElement(PackageRelationshipNamespace + "Relationship",
-                        new XAttribute("Id", "rId1"),
-                        new XAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"),
-                        new XAttribute("Target", "worksheets/sheet1.xml")),
-                    new XElement(PackageRelationshipNamespace + "Relationship",
-                        new XAttribute("Id", "rId2"),
-                        new XAttribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"),
-                        new XAttribute("Target", "worksheets/sheet2.xml"))));
-
-            return document.Declaration + Environment.NewLine + document;
-        }
-
-        private static string BuildWorksheetXml(IReadOnlyList<IReadOnlyList<string>> rows)
-        {
-            var sheetData = new XElement(SpreadsheetNamespace + "sheetData");
-
-            for (int rowIndex = 0; rowIndex < rows.Count; rowIndex++)
-            {
-                var rowElement = new XElement(SpreadsheetNamespace + "row",
-                    new XAttribute("r", rowIndex + 1));
-
-                IReadOnlyList<string> row = rows[rowIndex];
-                for (int columnIndex = 0; columnIndex < row.Count; columnIndex++)
+                return new AppTemplateData
                 {
-                    string cellReference = GetCellReference(columnIndex + 1, rowIndex + 1);
-                    string cellValue = row[columnIndex] ?? string.Empty;
-
-                    rowElement.Add(
-                        new XElement(SpreadsheetNamespace + "c",
-                            new XAttribute("r", cellReference),
-                            new XAttribute("t", "inlineStr"),
-                            new XElement(SpreadsheetNamespace + "is",
-                                new XElement(SpreadsheetNamespace + "t",
-                                    new XAttribute(XNamespace.Xml + "space", "preserve"),
-                                    cellValue))));
-                }
-
-                sheetData.Add(rowElement);
+                    TaskIndex = ReadInt(rows, nameof(AppTemplateData.TaskIndex)),
+                    TaskName = ReadString(rows, nameof(AppTemplateData.TaskName)),
+                    SmoModeIndex = ReadInt(rows, nameof(AppTemplateData.SmoModeIndex)),
+                    SmoModeName = ReadString(rows, nameof(AppTemplateData.SmoModeName)),
+                    Lambda = ReadString(rows, nameof(AppTemplateData.Lambda)),
+                    Mu = ReadString(rows, nameof(AppTemplateData.Mu)),
+                    ServiceTime = ReadString(rows, nameof(AppTemplateData.ServiceTime)),
+                    Channels = ReadString(rows, nameof(AppTemplateData.Channels)),
+                    SystemCapacity = ReadString(rows, nameof(AppTemplateData.SystemCapacity)),
+                    Supply = ReadString(rows, nameof(AppTemplateData.Supply)),
+                    Demand = ReadString(rows, nameof(AppTemplateData.Demand)),
+                    Objective = ReadString(rows, nameof(AppTemplateData.Objective)),
+                    Matrix = ReadString(rows, nameof(AppTemplateData.Matrix)),
+                    B = ReadString(rows, nameof(AppTemplateData.B)),
+                    ResultText = ReadString(rows, nameof(AppTemplateData.ResultText)),
+                    CostRows = ParseCostRows(ReadString(rows, nameof(AppTemplateData.CostRows)))
+                };
             }
-
-            var document = new XDocument(
-                new XElement(SpreadsheetNamespace + "worksheet",
-                    sheetData));
-
-            return document.Declaration + Environment.NewLine + document;
-        }
-
-        private static List<IReadOnlyList<string>> BuildInputRows(AppTemplateData data)
-        {
-            var costRows = data.CostRows?.Count > 0
-                ? data.CostRows
-                : new List<CostRow> { new CostRow(), new CostRow(), new CostRow() };
-
-            int matrixStartRow = 19;
-            int simplexHeaderRow = matrixStartRow + costRows.Count + 1;
-            var rows = new List<IReadOnlyList<string>>
-            {
-                new[] { "Шаблон задач математического моделирования" },
-                new[] { string.Empty },
-                new[] { "Тип задачи", data.TaskIndex.ToString(CultureInfo.InvariantCulture), data.TaskName ?? string.Empty },
-                new[] { "Режим СМО", data.SmoModeIndex.ToString(CultureInfo.InvariantCulture), data.SmoModeName ?? string.Empty },
-                new[] { string.Empty },
-                new[] { "Параметры СМО", "Значение" },
-                new[] { "λ (интенсивность заявок)", data.Lambda ?? string.Empty },
-                new[] { "μ (интенсивность обслуживания)", data.Mu ?? string.Empty },
-                new[] { "t (время)", data.ServiceTime ?? string.Empty },
-                new[] { "n (каналы)", data.Channels ?? string.Empty },
-                new[] { "K (размер системы)", data.SystemCapacity ?? string.Empty },
-                new[] { string.Empty },
-                new[] { "Транспортная задача", "Значение" },
-                new[] { "Запасы", data.Supply ?? string.Empty },
-                new[] { "Потребности", data.Demand ?? string.Empty },
-                new[] { "Количество строк матрицы", costRows.Count.ToString(CultureInfo.InvariantCulture) },
-                new[] { string.Empty },
-                new[] { "B1", "B2", "B3", "B4", "B5" }
-            };
-
-            foreach (var row in costRows)
-            {
-                rows.Add(new[]
-                {
-                    row.V1.ToString(CultureInfo.InvariantCulture),
-                    row.V2.ToString(CultureInfo.InvariantCulture),
-                    row.V3.ToString(CultureInfo.InvariantCulture),
-                    row.V4.ToString(CultureInfo.InvariantCulture),
-                    row.V5.ToString(CultureInfo.InvariantCulture)
-                });
-            }
-
-            while (rows.Count < simplexHeaderRow - 1)
-                rows.Add(new[] { string.Empty });
-
-            rows.Add(new[] { "Симплекс-метод", "Значение" });
-            rows.Add(new[] { "Целевая функция", data.Objective ?? string.Empty });
-            rows.Add(new[] { "Матрица A", data.Matrix ?? string.Empty });
-            rows.Add(new[] { "Правая часть b", data.B ?? string.Empty });
-
-            return rows;
-        }
-
-        private static List<IReadOnlyList<string>> BuildResultRows(AppTemplateData data)
-        {
-            var rows = new List<IReadOnlyList<string>>
-            {
-                new[] { "Итоговое решение" },
-                new[] { string.Empty },
-                new[] { "Тип задачи", data.TaskName ?? string.Empty },
-                new[] { "Режим СМО", data.SmoModeName ?? string.Empty },
-                new[] { string.Empty },
-                new[] { "Результат расчета" }
-            };
-
-            string[] lines = (data.ResultText ?? string.Empty)
-                .Replace("\r\n", "\n")
-                .Replace('\r', '\n')
-                .Split('\n');
-
-            foreach (string line in lines)
-                rows.Add(new[] { line });
-
-            return rows;
-        }
-
-        private static AppTemplateData ImportReadableWorkbook(
-            ZipArchive archive,
-            IReadOnlyDictionary<string, string> workbookSheets,
-            IReadOnlyList<string> sharedStrings)
-        {
-            List<Dictionary<int, string>> inputRows = ReadWorksheetRows(archive, workbookSheets, InputSheetName, sharedStrings);
-            int matrixRowCount = ReadWorksheetInt(inputRows, 16, 2, 3);
-            int matrixStartRow = 19;
-            int simplexHeaderRow = matrixStartRow + matrixRowCount + 1;
-
-            var costRows = new List<CostRow>();
-            for (int offset = 0; offset < matrixRowCount; offset++)
-            {
-                int rowNumber = matrixStartRow + offset;
-                costRows.Add(new CostRow
-                {
-                    V1 = ReadWorksheetInt(inputRows, rowNumber, 1, 0),
-                    V2 = ReadWorksheetInt(inputRows, rowNumber, 2, 0),
-                    V3 = ReadWorksheetInt(inputRows, rowNumber, 3, 0),
-                    V4 = ReadWorksheetInt(inputRows, rowNumber, 4, 0),
-                    V5 = ReadWorksheetInt(inputRows, rowNumber, 5, 0)
-                });
-            }
-
-            return new AppTemplateData
-            {
-                TaskIndex = ReadWorksheetInt(inputRows, 3, 2, 0),
-                TaskName = ReadWorksheetString(inputRows, 3, 3),
-                SmoModeIndex = ReadWorksheetInt(inputRows, 4, 2, 0),
-                SmoModeName = ReadWorksheetString(inputRows, 4, 3),
-                Lambda = ReadWorksheetString(inputRows, 7, 2),
-                Mu = ReadWorksheetString(inputRows, 8, 2),
-                ServiceTime = ReadWorksheetString(inputRows, 9, 2),
-                Channels = ReadWorksheetString(inputRows, 10, 2),
-                SystemCapacity = ReadWorksheetString(inputRows, 11, 2),
-                Supply = ReadWorksheetString(inputRows, 14, 2),
-                Demand = ReadWorksheetString(inputRows, 15, 2),
-                Objective = ReadWorksheetString(inputRows, simplexHeaderRow + 1, 2),
-                Matrix = ReadWorksheetString(inputRows, simplexHeaderRow + 2, 2),
-                B = ReadWorksheetString(inputRows, simplexHeaderRow + 3, 2),
-                ResultText = ReadReadableResultText(archive, workbookSheets, sharedStrings),
-                CostRows = costRows
-            };
-        }
-
-        private static AppTemplateData ImportLegacyWorkbook(
-            ZipArchive archive,
-            IReadOnlyDictionary<string, string> workbookSheets,
-            IReadOnlyList<string> sharedStrings)
-        {
-            Dictionary<string, string> meta = ReadKeyValueSheet(archive, workbookSheets, LegacyMetaSheetName, sharedStrings);
-            Dictionary<string, string> inputs = ReadKeyValueSheet(archive, workbookSheets, LegacyInputsSheetName, sharedStrings);
-            List<CostRow> costRows = ReadTransportRows(archive, workbookSheets, sharedStrings);
-            string resultText = ReadResultText(archive, workbookSheets, sharedStrings);
-
-            return new AppTemplateData
-            {
-                TaskIndex = ReadInt(meta, "TaskIndex", 0),
-                TaskName = ReadString(meta, "TaskName"),
-                SmoModeIndex = ReadInt(meta, "SmoModeIndex", 0),
-                SmoModeName = ReadString(meta, "SmoModeName"),
-                Lambda = ReadString(inputs, "Lambda"),
-                Mu = ReadString(inputs, "Mu"),
-                ServiceTime = ReadString(inputs, "ServiceTime"),
-                Channels = ReadString(inputs, "Channels"),
-                SystemCapacity = ReadString(inputs, "SystemCapacity"),
-                Supply = ReadString(inputs, "Supply"),
-                Demand = ReadString(inputs, "Demand"),
-                Objective = ReadString(inputs, "Objective"),
-                Matrix = ReadString(inputs, "Matrix"),
-                B = ReadString(inputs, "B"),
-                ResultText = resultText,
-                CostRows = costRows
-            };
         }
 
         private static void WriteEntry(ZipArchive archive, string entryPath, string content)
@@ -1485,39 +1213,51 @@ namespace Math_Model_All_Work
                 writer.Write(content);
         }
 
-        private static Dictionary<string, string> GetWorkbookSheetMap(ZipArchive archive)
+        private static string BuildWorksheetXml(IEnumerable<string[]> rows)
         {
-            XDocument workbook = LoadXml(archive, "xl/workbook.xml");
-            XDocument relationships = LoadXml(archive, "xl/_rels/workbook.xml.rels");
+            var sheetData = new XElement(
+                SpreadsheetNamespace + "sheetData",
+                rows.Select(row =>
+                    new XElement(
+                        SpreadsheetNamespace + "row",
+                        row.Select(value =>
+                            new XElement(
+                                SpreadsheetNamespace + "c",
+                                new XAttribute("t", "inlineStr"),
+                                new XElement(
+                                    SpreadsheetNamespace + "is",
+                                    new XElement(
+                                        SpreadsheetNamespace + "t",
+                                        new XAttribute(XNamespace.Xml + "space", "preserve"),
+                                        value ?? string.Empty)))))));
 
-            Dictionary<string, string> relationMap = relationships.Root?
-                .Elements(PackageRelationshipNamespace + "Relationship")
-                .ToDictionary(
-                    element => (string)element.Attribute("Id"),
-                    element => NormalizeWorkbookTarget((string)element.Attribute("Target")))
-                ?? new Dictionary<string, string>();
-
-            var sheetMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            IEnumerable<XElement> sheets = workbook.Root?
-                .Element(SpreadsheetNamespace + "sheets")?
-                .Elements(SpreadsheetNamespace + "sheet")
-                ?? Enumerable.Empty<XElement>();
-
-            foreach (XElement sheet in sheets)
-            {
-                string sheetName = (string)sheet.Attribute("name");
-                string relationId = (string)sheet.Attribute(RelationshipNamespace + "id");
-                if (string.IsNullOrWhiteSpace(sheetName) || string.IsNullOrWhiteSpace(relationId))
-                    continue;
-
-                if (relationMap.TryGetValue(relationId, out string target))
-                    sheetMap[sheetName] = target;
-            }
-
-            return sheetMap;
+            return "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                   new XDocument(new XElement(SpreadsheetNamespace + "worksheet", sheetData))
+                       .ToString(SaveOptions.DisableFormatting);
         }
 
-        private static IReadOnlyList<string> GetSharedStrings(ZipArchive archive)
+        private static Dictionary<string, string> ReadRows(ZipArchive archive)
+        {
+            XDocument worksheet = LoadXml(archive, "xl/worksheets/sheet1.xml");
+            IReadOnlyList<string> sharedStrings = ReadSharedStrings(archive);
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (XElement row in worksheet.Descendants(SpreadsheetNamespace + "row"))
+            {
+                List<string> cells = row.Elements(SpreadsheetNamespace + "c")
+                    .Select(cell => ReadCellValue(cell, sharedStrings))
+                    .ToList();
+
+                if (cells.Count == 0 || string.IsNullOrWhiteSpace(cells[0]))
+                    continue;
+
+                result[cells[0]] = cells.Count > 1 ? cells[1] : string.Empty;
+            }
+
+            return result;
+        }
+
+        private static IReadOnlyList<string> ReadSharedStrings(ZipArchive archive)
         {
             var entry = archive.GetEntry("xl/sharedStrings.xml");
             if (entry == null)
@@ -1525,161 +1265,11 @@ namespace Math_Model_All_Work
 
             using (var stream = entry.Open())
             {
-                XDocument document = XDocument.Load(stream);
-                return document.Root?
-                    .Elements(SpreadsheetNamespace + "si")
-                    .Select(ReadSharedStringItem)
-                    .ToList()
-                    ?? new List<string>();
+                return XDocument.Load(stream)
+                    .Descendants(SpreadsheetNamespace + "si")
+                    .Select(item => string.Concat(item.Descendants(SpreadsheetNamespace + "t").Select(text => text.Value)))
+                    .ToList();
             }
-        }
-
-        private static string ReadSharedStringItem(XElement item)
-        {
-            if (item == null)
-                return string.Empty;
-
-            var directText = item.Element(SpreadsheetNamespace + "t");
-            if (directText != null)
-                return directText.Value;
-
-            return string.Concat(item.Elements(SpreadsheetNamespace + "r")
-                                     .Select(run => run.Element(SpreadsheetNamespace + "t")?.Value ?? string.Empty));
-        }
-
-        private static Dictionary<string, string> ReadKeyValueSheet(
-            ZipArchive archive,
-            IReadOnlyDictionary<string, string> workbookSheets,
-            string sheetName,
-            IReadOnlyList<string> sharedStrings)
-        {
-            List<Dictionary<int, string>> rows = ReadWorksheetRows(archive, workbookSheets, sheetName, sharedStrings);
-            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            for (int i = 1; i < rows.Count; i++)
-            {
-                string key = GetCell(rows[i], 1);
-                string value = GetCell(rows[i], 2);
-
-                if (!string.IsNullOrWhiteSpace(key))
-                    result[key] = value ?? string.Empty;
-            }
-
-            return result;
-        }
-
-        private static List<CostRow> ReadTransportRows(
-            ZipArchive archive,
-            IReadOnlyDictionary<string, string> workbookSheets,
-            IReadOnlyList<string> sharedStrings)
-        {
-            List<Dictionary<int, string>> rows = ReadWorksheetRows(archive, workbookSheets, LegacyTransportSheetName, sharedStrings);
-            var result = new List<CostRow>();
-
-            for (int i = 1; i < rows.Count; i++)
-            {
-                if (rows[i].Count == 0)
-                    continue;
-
-                result.Add(new CostRow
-                {
-                    V1 = ReadInt(rows[i], 1),
-                    V2 = ReadInt(rows[i], 2),
-                    V3 = ReadInt(rows[i], 3),
-                    V4 = ReadInt(rows[i], 4),
-                    V5 = ReadInt(rows[i], 5)
-                });
-            }
-
-            return result;
-        }
-
-        private static string ReadResultText(
-            ZipArchive archive,
-            IReadOnlyDictionary<string, string> workbookSheets,
-            IReadOnlyList<string> sharedStrings)
-        {
-            List<Dictionary<int, string>> rows = ReadWorksheetRows(archive, workbookSheets, LegacyResultSheetName, sharedStrings);
-            var lines = new List<string>();
-
-            for (int i = 1; i < rows.Count; i++)
-                lines.Add(GetCell(rows[i], 1) ?? string.Empty);
-
-            return string.Join(Environment.NewLine, lines);
-        }
-
-        private static string ReadReadableResultText(
-            ZipArchive archive,
-            IReadOnlyDictionary<string, string> workbookSheets,
-            IReadOnlyList<string> sharedStrings)
-        {
-            List<Dictionary<int, string>> rows = ReadWorksheetRows(archive, workbookSheets, ResultSheetName, sharedStrings);
-            var lines = new List<string>();
-
-            for (int rowNumber = 7; rowNumber <= rows.Count; rowNumber++)
-            {
-                string value = ReadWorksheetString(rows, rowNumber, 1);
-                if (!string.IsNullOrEmpty(value) || lines.Count > 0)
-                    lines.Add(value);
-            }
-
-            return string.Join(Environment.NewLine, lines).TrimEnd();
-        }
-
-        private static string ReadWorksheetString(List<Dictionary<int, string>> rows, int rowNumber, int columnIndex)
-        {
-            if (rowNumber < 1 || rowNumber > rows.Count)
-                return string.Empty;
-
-            return GetCell(rows[rowNumber - 1], columnIndex) ?? string.Empty;
-        }
-
-        private static int ReadWorksheetInt(List<Dictionary<int, string>> rows, int rowNumber, int columnIndex, int defaultValue)
-        {
-            string value = ReadWorksheetString(rows, rowNumber, columnIndex);
-            if (string.IsNullOrWhiteSpace(value))
-                return defaultValue;
-
-            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedInt))
-                return parsedInt;
-
-            if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedDouble))
-                return Convert.ToInt32(Math.Round(parsedDouble, MidpointRounding.AwayFromZero));
-
-            throw new InvalidDataException($"Не удалось прочитать целое число из Excel: \"{value}\".");
-        }
-
-        private static List<Dictionary<int, string>> ReadWorksheetRows(
-            ZipArchive archive,
-            IReadOnlyDictionary<string, string> workbookSheets,
-            string sheetName,
-            IReadOnlyList<string> sharedStrings)
-        {
-            if (!workbookSheets.TryGetValue(sheetName, out string sheetPath))
-                throw new InvalidDataException($"В файле Excel не найден лист \"{sheetName}\".");
-
-            XDocument worksheet = LoadXml(archive, sheetPath);
-            IEnumerable<XElement> rowElements = worksheet.Root?
-                .Element(SpreadsheetNamespace + "sheetData")?
-                .Elements(SpreadsheetNamespace + "row")
-                ?? Enumerable.Empty<XElement>();
-
-            var rows = new List<Dictionary<int, string>>();
-            foreach (XElement row in rowElements)
-            {
-                var cells = new Dictionary<int, string>();
-
-                foreach (XElement cell in row.Elements(SpreadsheetNamespace + "c"))
-                {
-                    string reference = (string)cell.Attribute("r");
-                    int columnIndex = GetColumnIndex(reference);
-                    cells[columnIndex] = ReadCellValue(cell, sharedStrings);
-                }
-
-                rows.Add(cells);
-            }
-
-            return rows;
         }
 
         private static XDocument LoadXml(ZipArchive archive, string entryPath)
@@ -1692,84 +1282,58 @@ namespace Math_Model_All_Work
                 return XDocument.Load(stream);
         }
 
-        private static string NormalizeWorkbookTarget(string target)
-        {
-            string normalized = (target ?? string.Empty).Replace('\\', '/');
-            if (normalized.StartsWith("/"))
-                return normalized.TrimStart('/');
-
-            return "xl/" + normalized.TrimStart('/');
-        }
-
         private static string ReadCellValue(XElement cell, IReadOnlyList<string> sharedStrings)
         {
             string type = (string)cell.Attribute("t");
 
             if (type == "inlineStr")
-            {
-                return string.Concat(cell.Descendants(SpreadsheetNamespace + "t")
-                                         .Select(element => element.Value));
-            }
+                return string.Concat(cell.Descendants(SpreadsheetNamespace + "t").Select(element => element.Value));
 
             string value = cell.Element(SpreadsheetNamespace + "v")?.Value ?? string.Empty;
-            if (type == "s" && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int sharedIndex))
+            if (type == "s" && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int sharedIndex)
+                && sharedIndex >= 0 && sharedIndex < sharedStrings.Count)
             {
-                if (sharedIndex >= 0 && sharedIndex < sharedStrings.Count)
-                    return sharedStrings[sharedIndex];
+                return sharedStrings[sharedIndex];
             }
-
-            if (type == "b")
-                return value == "1" ? "TRUE" : "FALSE";
 
             return value;
         }
 
-        private static int GetColumnIndex(string cellReference)
+        private static string SerializeCostRows(IEnumerable<CostRow> rows)
         {
-            if (string.IsNullOrWhiteSpace(cellReference))
-                return 1;
-
-            int index = 0;
-            foreach (char character in cellReference)
-            {
-                if (!char.IsLetter(character))
-                    break;
-
-                index = (index * 26) + (char.ToUpperInvariant(character) - 'A' + 1);
-            }
-
-            return index == 0 ? 1 : index;
+            return string.Join(
+                "\n",
+                (rows ?? Enumerable.Empty<CostRow>()).Select(row =>
+                    string.Join(";", new[]
+                    {
+                        row.V1.ToString(CultureInfo.InvariantCulture),
+                        row.V2.ToString(CultureInfo.InvariantCulture),
+                        row.V3.ToString(CultureInfo.InvariantCulture),
+                        row.V4.ToString(CultureInfo.InvariantCulture),
+                        row.V5.ToString(CultureInfo.InvariantCulture)
+                    })));
         }
 
-        private static string GetCell(Dictionary<int, string> row, int columnIndex)
+        private static List<CostRow> ParseCostRows(string rawValue)
         {
-            return row.TryGetValue(columnIndex, out string value) ? value : string.Empty;
+            return (rawValue ?? string.Empty)
+                .Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Split(';'))
+                .Where(parts => parts.Length >= 5)
+                .Select(parts => new CostRow
+                {
+                    V1 = ParseInt(parts[0]),
+                    V2 = ParseInt(parts[1]),
+                    V3 = ParseInt(parts[2]),
+                    V4 = ParseInt(parts[3]),
+                    V5 = ParseInt(parts[4])
+                })
+                .ToList();
         }
 
-        private static int ReadInt(Dictionary<int, string> row, int columnIndex)
+        private static int ReadInt(IReadOnlyDictionary<string, string> values, string key)
         {
-            string rawValue = GetCell(row, columnIndex);
-            if (string.IsNullOrWhiteSpace(rawValue))
-                return 0;
-
-            if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
-                return value;
-
-            if (double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double doubleValue))
-                return Convert.ToInt32(Math.Round(doubleValue, MidpointRounding.AwayFromZero));
-
-            throw new InvalidDataException($"Не удалось прочитать целое число из Excel: \"{rawValue}\".");
-        }
-
-        private static int ReadInt(IReadOnlyDictionary<string, string> values, string key, int defaultValue)
-        {
-            if (!values.TryGetValue(key, out string rawValue) || string.IsNullOrWhiteSpace(rawValue))
-                return defaultValue;
-
-            if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result))
-                return result;
-
-            throw new InvalidDataException($"Поле \"{key}\" содержит некорректное целое значение.");
+            return ParseInt(ReadString(values, key));
         }
 
         private static string ReadString(IReadOnlyDictionary<string, string> values, string key)
@@ -1777,24 +1341,23 @@ namespace Math_Model_All_Work
             return values.TryGetValue(key, out string rawValue) ? rawValue ?? string.Empty : string.Empty;
         }
 
-        private static string GetCellReference(int columnIndex, int rowIndex)
+        private static int ParseInt(string rawValue)
         {
-            return GetColumnName(columnIndex) + rowIndex.ToString(CultureInfo.InvariantCulture);
+            if (string.IsNullOrWhiteSpace(rawValue))
+                return 0;
+
+            if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result))
+                return result;
+
+            if (double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double doubleValue))
+                return Convert.ToInt32(Math.Round(doubleValue, MidpointRounding.AwayFromZero));
+
+            throw new InvalidDataException($"Не удалось прочитать число из Excel: \"{rawValue}\".");
         }
 
-        private static string GetColumnName(int columnIndex)
+        private static string[] Row(string key, object value)
         {
-            var characters = new Stack<char>();
-            int value = columnIndex;
-
-            while (value > 0)
-            {
-                value--;
-                characters.Push((char)('A' + (value % 26)));
-                value /= 26;
-            }
-
-            return new string(characters.ToArray());
+            return new[] { key, Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty };
         }
     }
 }
