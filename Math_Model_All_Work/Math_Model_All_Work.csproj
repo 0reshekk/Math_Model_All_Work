@@ -57,6 +57,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="severo-zapad\Window.xaml.cs">
+      <DependentUpon>Window.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="simplex\Simplex.xaml.cs">
+      <DependentUpon>Simplex.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="smo\SMO.xaml.cs">
+      <DependentUpon>SMO.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -69,8 +78,27 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="min el\MinElement.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="severo-zapad\Window.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="simplex\Simplex.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="smo\SMO.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="min el\MinElement.xaml.cs">
+      <DependentUpon>MinElement.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -90,10 +118,14 @@
     </EmbeddedResource>
     <None Include="Diagrams\idef0МинЭлемент.drawio" />
     <None Include="Diagrams\ДиаграммаИспользованияСМО.drawio" />
+    <None Include="min el\Метод минимальных элтов.docx" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="severo-zapad\Северо-западный метод.docx" />
+    <None Include="simplex\Симплекс метод.docx" />
+    <None Include="smo\Смо.docx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

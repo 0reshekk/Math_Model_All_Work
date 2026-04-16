@@ -1,0 +1,94 @@
+﻿<Window
+    x:Class="Math_Model_All_Work.min_el.MinElement"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Math_Model_All_Work.min_el"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="MinElement"
+    Width="800"
+    Height="450"
+    mc:Ignorable="d">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--  Левая панель  -->
+        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+
+            <TextBlock
+                Margin="0,0,0,10"
+                FontWeight="Bold"
+                Text="Параметры задачи" />
+
+            <TextBlock Text="Количество поставщиков (строки):" />
+            <TextBox
+                Name="TxtNumSuppliers"
+                Margin="0,5"
+                Text="3" />
+
+            <TextBlock Text="Количество потребителей (столбцы):" />
+            <TextBox
+                Name="TxtNumConsumers"
+                Margin="0,5"
+                Text="4" />
+
+            <Button
+                Margin="0,10"
+                Click="BtnCreateCostMatrix_Click"
+                Content="Создать матрицу стоимостей" />
+
+            <TextBlock FontWeight="Bold" Text="Запасы (по строкам):" />
+            <TextBox
+                Name="TxtSupply"
+                Margin="0,5"
+                ToolTip="Например: 20,30,25" />
+
+            <TextBlock FontWeight="Bold" Text="Потребности (по столбцам):" />
+            <TextBox
+                Name="TxtDemand"
+                Margin="0,5"
+                ToolTip="Например: 10,15,20,30" />
+
+            <Button
+                Margin="0,10"
+                Background="#cad8fe"
+                Click="BtnSolve_Click"
+                Content="Решить (метод минимальных элементов)" />
+
+            <Button
+                Margin="0,5"
+                Background="#ffcccc"
+                Click="BtnClear_Click"
+                Content="Очистить" />
+
+        </StackPanel>
+
+        <!--  Правая часть  -->
+        <StackPanel Grid.Column="1">
+
+            <TextBlock FontWeight="Bold" Text="Матрица стоимостей:" />
+
+            <DataGrid
+                Name="DataGridCost"
+                Height="220"
+                Margin="0,5" />
+
+            <TextBlock
+                Margin="0,10,0,5"
+                FontWeight="Bold"
+                Text="Результат:" />
+
+            <ScrollViewer Height="220">
+                <TextBlock
+                    Name="TxtResult"
+                    FontFamily="Consolas"
+                    TextWrapping="Wrap" />
+            </ScrollViewer>
+
+        </StackPanel>
+    </Grid>
+
+</Window>

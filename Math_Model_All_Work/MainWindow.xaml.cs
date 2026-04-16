@@ -239,8 +239,6 @@ namespace Math_Model_All_Work
         {
             return new AppTemplateData
             {
-                TaskIndex = Math.Max(TaskBox.SelectedIndex, 0),
-                SmoModeIndex = Math.Max(SmoModeBox.SelectedIndex, 0),
                 Lambda = LambdaBox.Text,
                 Mu = MuBox.Text,
                 ServiceTime = TserviceBox.Text,
@@ -264,9 +262,6 @@ namespace Math_Model_All_Work
             if (data == null)
                 throw new ArgumentNullException(nameof(data));
 
-            TaskBox.SelectedIndex = NormalizeIndex(data.TaskIndex, TaskBox.Items.Count, DefaultTaskIndex);
-            SmoModeBox.SelectedIndex = NormalizeIndex(data.SmoModeIndex, SmoModeBox.Items.Count, DefaultSmoModeIndex);
-
             LambdaBox.Text = data.Lambda ?? string.Empty;
             MuBox.Text = data.Mu ?? string.Empty;
             TserviceBox.Text = data.ServiceTime ?? string.Empty;
@@ -284,15 +279,6 @@ namespace Math_Model_All_Work
 
             UpdatePanels();
             UpdateSmoModeUi();
-        }
-
-        /// <summary>
-        /// Возвращает индекс, если он попадает в диапазон элементов списка;
-        /// иначе подставляет безопасное значение по умолчанию.
-        /// </summary>
-        private static int NormalizeIndex(int value, int itemCount, int fallback)
-        {
-            return value >= 0 && value < itemCount ? value : fallback;
         }
 
         /// <summary>
@@ -446,65 +432,35 @@ namespace Math_Model_All_Work
             if (timeInput < 0) throw new Exception("t должно быть ≥ 0.");
 
             var sb = new StringBuilder();
+            bool useWaitingTimeMode = SmoModeBox.SelectedIndex == 6;
+            double mu = useWaitingTimeMode ? muInput : ResolveValidatedServiceRate(muInput, timeInput);
 
             switch (SmoModeBox.SelectedIndex)
             {
                 case 0:
-                    {
-                        double mu = ResolveServiceRate(muInput, timeInput);
-                        ValidateServiceRate(mu);
-
-                        AppendFinite(lambda, mu, n, K, sb);
-                        break;
-                    }
+                    AppendFinite(lambda, mu, n, K, sb);
+                    break;
                 case 1:
-                    {
-                        double mu = ResolveServiceRate(muInput, timeInput);
-                        ValidateServiceRate(mu);
-
-                        AppendSingleLoss(lambda, mu, sb);
-                        break;
-                    }
+                    AppendSingleLoss(lambda, mu, sb);
+                    break;
                 case 2:
-                    {
-                        double mu = ResolveServiceRate(muInput, timeInput);
-                        ValidateServiceRate(mu);
-
-                        AppendMultiLoss(lambda, mu, n, sb);
-                        break;
-                    }
+                    AppendMultiLoss(lambda, mu, n, sb);
+                    break;
                 case 3:
-                    {
-                        double mu = ResolveServiceRate(muInput, timeInput);
-                        ValidateServiceRate(mu);
-
-                        AppendMM1(lambda, mu, sb);
-                        break;
-                    }
+                    AppendMM1(lambda, mu, sb);
+                    break;
                 case 4:
-                    {
-                        double mu = ResolveServiceRate(muInput, timeInput);
-                        ValidateServiceRate(mu);
-
-                        AppendMMn(lambda, mu, n, sb);
-                        break;
-                    }
+                    AppendMMn(lambda, mu, n, sb);
+                    break;
                 case 5:
-                    {
-                        double mu = ResolveServiceRate(muInput, timeInput);
-                        ValidateServiceRate(mu);
-
-                        AppendFixed(lambda, mu, sb);
-                        break;
-                    }
+                    AppendFixed(lambda, mu, sb);
+                    break;
                 case 6:
-                    {
-                        ValidateServiceRate(muInput);
-                        if (timeInput <= 0) throw new Exception("t ожидания должно быть > 0.");
+                    ValidateServiceRate(muInput);
+                    if (timeInput <= 0) throw new Exception("t ожидания должно быть > 0.");
 
-                        AppendImpatient(lambda, muInput, timeInput, sb);
-                        break;
-                    }
+                    AppendImpatient(lambda, muInput, timeInput, sb);
+                    break;
                 default:
                     throw new Exception("Выбери режим СМО.");
             }
@@ -519,6 +475,17 @@ namespace Math_Model_All_Work
         private static double ResolveServiceRate(double mu, double serviceTime)
         {
             return serviceTime > 0 ? 1.0 / serviceTime : mu;
+        }
+
+        /// <summary>
+        /// Возвращает интенсивность обслуживания и сразу проверяет,
+        /// что после выбора между μ и 1 / t значение остается допустимым.
+        /// </summary>
+        private static double ResolveValidatedServiceRate(double mu, double serviceTime)
+        {
+            double resolvedMu = ResolveServiceRate(mu, serviceTime);
+            ValidateServiceRate(resolvedMu);
+            return resolvedMu;
         }
 
         /// <summary>
@@ -1193,8 +1160,6 @@ namespace Math_Model_All_Work
     /// </summary>
     internal sealed class AppTemplateData
     {
-        public int TaskIndex { get; set; }
-        public int SmoModeIndex { get; set; }
         public string Lambda { get; set; } = string.Empty;
         public string Mu { get; set; } = string.Empty;
         public string ServiceTime { get; set; } = string.Empty;
@@ -1241,13 +1206,6 @@ namespace Math_Model_All_Work
     /// </summary>
     internal static class ExcelTemplateService
     {
-        private const string FormatKey = "__format";
-        private const string FormatValueV1 = "MathModelAllWork.Excel.v1";
-        private const string FormatValueV2 = "MathModelAllWork.Excel.v2";
-        private const string TransportMethodKey = "TransportMethod";
-        private const string TransportMethodNorthWest = "NorthWest";
-        private const string TransportMethodLeastCost = "LeastCost";
-        private const string ResultLineKeyPrefix = "Result.";
         private static readonly XNamespace SpreadsheetNamespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
         /// <summary>
@@ -1300,19 +1258,9 @@ namespace Math_Model_All_Work
             using (var archive = ZipFile.OpenRead(filePath))
             {
                 Dictionary<string, string> rows = ReadRows(archive);
-                string format = ReadString(rows, FormatKey);
-
-                if (!string.IsNullOrWhiteSpace(format) &&
-                    !string.Equals(format, FormatValueV1, StringComparison.Ordinal) &&
-                    !string.Equals(format, FormatValueV2, StringComparison.Ordinal))
-                {
-                    throw new InvalidDataException("Поддерживается только Excel-файл, экспортированный этой программой в поддерживаемом формате.");
-                }
 
                 return new AppTemplateData
                 {
-                    TaskIndex = InferTaskIndex(rows),
-                    SmoModeIndex = ReadInt(rows, nameof(AppTemplateData.SmoModeIndex)),
                     Lambda = ReadString(rows, nameof(AppTemplateData.Lambda)),
                     Mu = ReadString(rows, nameof(AppTemplateData.Mu)),
                     ServiceTime = ReadString(rows, nameof(AppTemplateData.ServiceTime)),
@@ -1323,53 +1271,33 @@ namespace Math_Model_All_Work
                     Objective = ReadString(rows, nameof(AppTemplateData.Objective)),
                     Matrix = ReadString(rows, nameof(AppTemplateData.Matrix)),
                     B = ReadString(rows, nameof(AppTemplateData.B)),
-                    ResultText = ReadResultText(rows),
+                    ResultText = ReadString(rows, nameof(AppTemplateData.ResultText)),
                     CostRows = ParseCostRows(ReadString(rows, nameof(AppTemplateData.CostRows)))
                 };
             }
         }
 
         /// <summary>
-        /// Формирует набор строк Excel только из нужных входных данных текущей задачи и строк результата.
+        /// Формирует плоскую таблицу `поле - значение`, чтобы Excel оставался коротким
+        /// и не зависел от того, какие блоки задач пользователь потом удалит из приложения.
         /// </summary>
         private static List<string[]> BuildRows(AppTemplateData data)
         {
-            var rows = new List<string[]>();
-
-            switch (data.TaskIndex)
+            return new List<string[]>
             {
-                case 0:
-                    rows.Add(Row(nameof(AppTemplateData.SmoModeIndex), data.SmoModeIndex));
-                    rows.Add(Row(nameof(AppTemplateData.Lambda), data.Lambda));
-                    rows.Add(Row(nameof(AppTemplateData.Mu), data.Mu));
-                    rows.Add(Row(nameof(AppTemplateData.ServiceTime), data.ServiceTime));
-                    rows.Add(Row(nameof(AppTemplateData.Channels), data.Channels));
-                    rows.Add(Row(nameof(AppTemplateData.SystemCapacity), data.SystemCapacity));
-                    break;
-
-                case 1:
-                    rows.Add(Row(TransportMethodKey, TransportMethodNorthWest));
-                    rows.Add(Row(nameof(AppTemplateData.Supply), data.Supply));
-                    rows.Add(Row(nameof(AppTemplateData.Demand), data.Demand));
-                    rows.Add(Row(nameof(AppTemplateData.CostRows), SerializeCostRows(data.CostRows)));
-                    break;
-
-                case 2:
-                    rows.Add(Row(TransportMethodKey, TransportMethodLeastCost));
-                    rows.Add(Row(nameof(AppTemplateData.Supply), data.Supply));
-                    rows.Add(Row(nameof(AppTemplateData.Demand), data.Demand));
-                    rows.Add(Row(nameof(AppTemplateData.CostRows), SerializeCostRows(data.CostRows)));
-                    break;
-
-                case 3:
-                    rows.Add(Row(nameof(AppTemplateData.Objective), data.Objective));
-                    rows.Add(Row(nameof(AppTemplateData.Matrix), data.Matrix));
-                    rows.Add(Row(nameof(AppTemplateData.B), data.B));
-                    break;
-            }
-
-            AppendResultRows(rows, data.ResultText);
-            return rows;
+                Row(nameof(AppTemplateData.Lambda), data.Lambda),
+                Row(nameof(AppTemplateData.Mu), data.Mu),
+                Row(nameof(AppTemplateData.ServiceTime), data.ServiceTime),
+                Row(nameof(AppTemplateData.Channels), data.Channels),
+                Row(nameof(AppTemplateData.SystemCapacity), data.SystemCapacity),
+                Row(nameof(AppTemplateData.Supply), data.Supply),
+                Row(nameof(AppTemplateData.Demand), data.Demand),
+                Row(nameof(AppTemplateData.Objective), data.Objective),
+                Row(nameof(AppTemplateData.Matrix), data.Matrix),
+                Row(nameof(AppTemplateData.B), data.B),
+                Row(nameof(AppTemplateData.CostRows), SerializeCostRows(data.CostRows)),
+                Row(nameof(AppTemplateData.ResultText), data.ResultText)
+            };
         }
 
         /// <summary>
@@ -1566,99 +1494,6 @@ namespace Math_Model_All_Work
         }
 
         /// <summary>
-        /// Добавляет в экспорт результат расчета как набор отдельных строк,
-        /// чтобы Excel отображал его раздельно, а не одним слитым блоком текста.
         /// </summary>
-        private static void AppendResultRows(ICollection<string[]> rows, string resultText)
-        {
-            string[] resultLines = SplitResultLines(resultText).ToArray();
-            if (resultLines.Length == 0)
-                return;
-
-            rows.Add(new[] { string.Empty, string.Empty });
-
-            for (int index = 0; index < resultLines.Length; index++)
-                rows.Add(Row(ResultLineKeyPrefix + (index + 1).ToString(CultureInfo.InvariantCulture), resultLines[index]));
-        }
-
-        /// <summary>
-        /// Разбивает результат по строкам и отбрасывает пустые строки,
-        /// чтобы экспорт выглядел компактно и читабельно.
-        /// </summary>
-        private static IEnumerable<string> SplitResultLines(string resultText)
-        {
-            return (resultText ?? string.Empty)
-                .Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
-                .Select(line => line.TrimEnd())
-                .Where(line => !string.IsNullOrWhiteSpace(line));
-        }
-
-        /// <summary>
-        /// Собирает текст результата обратно либо из старого поля ResultText,
-        /// либо из нового набора Result.1, Result.2, ...
-        /// </summary>
-        private static string ReadResultText(IReadOnlyDictionary<string, string> values)
-        {
-            string singleResult = ReadString(values, nameof(AppTemplateData.ResultText));
-            if (!string.IsNullOrWhiteSpace(singleResult))
-                return singleResult;
-
-            return string.Join(
-                Environment.NewLine,
-                values
-                    .Where(pair => pair.Key.StartsWith(ResultLineKeyPrefix, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(pair => ParseResultLineIndex(pair.Key))
-                    .Select(pair => pair.Value));
-        }
-
-        /// <summary>
-        /// Определяет индекс задачи по экспортированным полям, если явный TaskIndex отсутствует.
-        /// </summary>
-        private static int InferTaskIndex(IReadOnlyDictionary<string, string> values)
-        {
-            if (values.ContainsKey(nameof(AppTemplateData.TaskIndex)))
-                return ReadInt(values, nameof(AppTemplateData.TaskIndex));
-
-            if (values.ContainsKey(TransportMethodKey))
-                return ParseTransportTaskIndex(ReadString(values, TransportMethodKey));
-
-            if (HasAnyKey(values, nameof(AppTemplateData.Supply), nameof(AppTemplateData.Demand), nameof(AppTemplateData.CostRows)))
-                return 1;
-
-            if (HasAnyKey(values, nameof(AppTemplateData.Objective), nameof(AppTemplateData.Matrix), nameof(AppTemplateData.B)))
-                return 3;
-
-            return 0;
-        }
-
-        /// <summary>
-        /// Определяет, присутствует ли в наборе данных хотя бы один из указанных ключей.
-        /// </summary>
-        private static bool HasAnyKey(IReadOnlyDictionary<string, string> values, params string[] keys)
-        {
-            return keys.Any(values.ContainsKey);
-        }
-
-        /// <summary>
-        /// Восстанавливает выбранный метод транспортной задачи из строки Excel.
-        /// </summary>
-        private static int ParseTransportTaskIndex(string rawValue)
-        {
-            if (string.Equals(rawValue, TransportMethodLeastCost, StringComparison.OrdinalIgnoreCase))
-                return 2;
-
-            return 1;
-        }
-
-        /// <summary>
-        /// Извлекает номер строки результата из ключа вида `Result.N`.
-        /// </summary>
-        private static int ParseResultLineIndex(string key)
-        {
-            string rawIndex = key.Substring(ResultLineKeyPrefix.Length);
-            return int.TryParse(rawIndex, NumberStyles.Integer, CultureInfo.InvariantCulture, out int index)
-                ? index
-                : int.MaxValue;
-        }
     }
 }

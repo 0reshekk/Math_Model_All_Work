@@ -1,0 +1,123 @@
+﻿<Window
+    x:Class="Math_Model_All_Work.smo.SMO"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Math_Model_All_Work.smo"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="SMO"
+    Width="800"
+    Height="450"
+    mc:Ignorable="d">
+    <Grid Margin="25">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="380" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--  ЛЕВАЯ ПАНЕЛЬ  -->
+        <Border
+            Margin="0,0,20,0"
+            Padding="20"
+            Background="White"
+            CornerRadius="14">
+            <StackPanel>
+
+                <TextBlock
+                    Margin="0,0,0,20"
+                    FontSize="22"
+                    FontWeight="Bold"
+                    Text="Анализ СМО" />
+
+                <!--  Тип СМО  -->
+                <TextBlock FontWeight="SemiBold" Text="Тип СМО" />
+                <ComboBox
+                    x:Name="cboSMOType"
+                    Height="32"
+                    Margin="0,6,0,15"
+                    SelectionChanged="CboSMOType_SelectionChanged">
+                    <ComboBoxItem Content="СМО с отказами" />
+                    <ComboBoxItem Content="СМО с ограниченной очередью" />
+                    <ComboBoxItem Content="СМО с неограниченной очередью" />
+                </ComboBox>
+
+                <!--  n  -->
+                <TextBlock FontWeight="SemiBold" Text="Количество каналов (n)" />
+                <TextBox x:Name="txtChannels" Margin="0,6,0,10" />
+
+                <!--  λ  -->
+                <TextBlock FontWeight="SemiBold" Text="Интенсивность заявок (λ)" />
+                <TextBox x:Name="txtLambda" Margin="0,6,0,10" />
+
+                <!--  μ  -->
+                <TextBlock FontWeight="SemiBold" Text="Интенсивность обслуживания (μ)" />
+                <TextBox x:Name="txtMu" Margin="0,6,0,10" />
+
+                <!--  t  -->
+                <TextBlock FontWeight="SemiBold" Text="Время обслуживания (tобс)" />
+                <TextBox x:Name="txtTob" Margin="0,6,0,10" />
+
+                <!--  очередь  -->
+                <StackPanel x:Name="QueuePanel">
+                    <TextBlock FontWeight="SemiBold" Text="Размер очереди (m)" />
+                    <TextBox x:Name="txtQueue" Margin="0,6,0,15" />
+                </StackPanel>
+
+                <!--  КНОПКИ  -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button
+                        Grid.Column="0"
+                        Height="40"
+                        Background="#0078D7"
+                        Click="BtnCalculate_Click"
+                        Content="Рассчитать"
+                        Foreground="White" />
+
+                    <Button
+                        Grid.Column="2"
+                        Height="40"
+                        Background="#D9534F"
+                        Click="BtnClear_Click"
+                        Content="Очистить"
+                        Foreground="White" />
+                </Grid>
+
+            </StackPanel>
+        </Border>
+
+        <!--  ПРАВАЯ ПАНЕЛЬ  -->
+        <Border
+            Grid.Column="1"
+            Padding="20"
+            Background="White"
+            CornerRadius="14">
+
+            <StackPanel>
+                <TextBlock
+                    Margin="0,0,0,10"
+                    FontSize="20"
+                    FontWeight="Bold"
+                    Text="Результаты" />
+
+                <TextBox
+                    x:Name="txtResult"
+                    Height="650"
+                    AcceptsReturn="True"
+                    Background="#FAFAFA"
+                    BorderThickness="0"
+                    FontFamily="Consolas"
+                    IsReadOnly="True"
+                    TextWrapping="Wrap"
+                    VerticalScrollBarVisibility="Auto" />
+            </StackPanel>
+
+        </Border>
+    </Grid>
+
+</Window>
