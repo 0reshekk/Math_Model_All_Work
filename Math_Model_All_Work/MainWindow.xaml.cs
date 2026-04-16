@@ -34,6 +34,9 @@ namespace Math_Model_All_Work
 
         #region Initialization
 
+        /// <summary>
+        /// Создает главное окно, настраивает культуру и подготавливает интерфейс к работе.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
@@ -43,12 +46,18 @@ namespace Math_Model_All_Work
             ResetTemplateToDefaults();
         }
 
+        /// <summary>
+        /// Подписывает элементы интерфейса на события, которые должны обновлять шаблон на лету.
+        /// </summary>
         private void HookUiEvents()
         {
             TaskBox.SelectionChanged += TaskBox_SelectionChanged;
             SmoModeBox.SelectionChanged += SmoModeBox_SelectionChanged;
         }
 
+        /// <summary>
+        /// Возвращает шаблон к начальному состоянию, чтобы пользователь всегда стартовал с корректного примера.
+        /// </summary>
         private void ResetTemplateToDefaults()
         {
             TaskBox.SelectedIndex = DefaultTaskIndex;
@@ -73,6 +82,9 @@ namespace Math_Model_All_Work
             UpdateSmoModeUi();
         }
 
+        /// <summary>
+        /// Формирует демонстрационную матрицу стоимостей для транспортной задачи.
+        /// </summary>
         private static List<CostRow> BuildDefaultCostRows()
         {
             return new List<CostRow>
@@ -83,6 +95,10 @@ namespace Math_Model_All_Work
             };
         }
 
+        /// <summary>
+        /// Создает пустую матрицу стоимостей с минимальным количеством строк,
+        /// чтобы таблица не исчезала полностью после очистки.
+        /// </summary>
         private static List<CostRow> BuildEmptyCostRows(int rowCount = DefaultTransportRowCount)
         {
             int normalizedCount = Math.Max(rowCount, DefaultTransportRowCount);
@@ -98,12 +114,14 @@ namespace Math_Model_All_Work
 
         #region Common UI Events
 
+        // Реагирует на смену типа задачи, переключает нужные панели и очищает старый результат.
         private void TaskBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             UpdatePanels();
             ResultText.Text = string.Empty;
         }
 
+        // Реагирует на смену режима СМО, обновляет подсказки и очищает старый результат.
         private void SmoModeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             UpdateSmoModeUi();
@@ -114,6 +132,9 @@ namespace Math_Model_All_Work
 
         #region Common Template Helpers
 
+        /// <summary>
+        /// Показывает только ту панель ввода, которая относится к выбранному типу задачи.
+        /// </summary>
         private void UpdatePanels()
         {
             SmoPanel.Visibility = Visibility.Collapsed;
@@ -135,6 +156,10 @@ namespace Math_Model_All_Work
             }
         }
 
+        /// <summary>
+        /// Обновляет подписи и пояснения для выбранного режима СМО,
+        /// чтобы пользователь видел, какие поля реально участвуют в расчете.
+        /// </summary>
         private void UpdateSmoModeUi()
         {
             TserviceLabel.Text = "t обслуживания (сек):";
@@ -177,11 +202,15 @@ namespace Math_Model_All_Work
             }
         }
 
+        // Кнопка очистки: сбрасывает введенные пользователем значения, но оставляет структуру формы.
         private void Clear_Click(object sender, RoutedEventArgs e)
         {
             ClearTemplateFields();
         }
 
+        /// <summary>
+        /// Очищает все поля ввода и сбрасывает результат, сохраняя рабочую структуру таблиц и панелей.
+        /// </summary>
         private void ClearTemplateFields()
         {
             LambdaBox.Text = string.Empty;
@@ -202,14 +231,16 @@ namespace Math_Model_All_Work
             UpdateSmoModeUi();
         }
 
+        /// <summary>
+        /// Снимает текущие значения с интерфейса и сохраняет их в объекте,
+        /// который затем используется при экспорте.
+        /// </summary>
         private AppTemplateData CaptureTemplateData()
         {
             return new AppTemplateData
             {
                 TaskIndex = Math.Max(TaskBox.SelectedIndex, 0),
-                TaskName = GetSelectedItemText(TaskBox),
                 SmoModeIndex = Math.Max(SmoModeBox.SelectedIndex, 0),
-                SmoModeName = GetSelectedItemText(SmoModeBox),
                 Lambda = LambdaBox.Text,
                 Mu = MuBox.Text,
                 ServiceTime = TserviceBox.Text,
@@ -225,6 +256,9 @@ namespace Math_Model_All_Work
             };
         }
 
+        /// <summary>
+        /// Применяет импортированные данные к интерфейсу и восстанавливает выбранный режим задачи.
+        /// </summary>
         private void ApplyTemplateData(AppTemplateData data)
         {
             if (data == null)
@@ -252,16 +286,19 @@ namespace Math_Model_All_Work
             UpdateSmoModeUi();
         }
 
+        /// <summary>
+        /// Возвращает индекс, если он попадает в диапазон элементов списка;
+        /// иначе подставляет безопасное значение по умолчанию.
+        /// </summary>
         private static int NormalizeIndex(int value, int itemCount, int fallback)
         {
             return value >= 0 && value < itemCount ? value : fallback;
         }
 
-        private static string GetSelectedItemText(ComboBox comboBox)
-        {
-            return (comboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? string.Empty;
-        }
-
+        /// <summary>
+        /// Определяет текущее количество строк в матрице стоимостей,
+        /// чтобы при очистке и импорте не потерять размер таблицы.
+        /// </summary>
         private int GetCurrentCostRowCount()
         {
             var rows = CostMatrix.ItemsSource as IEnumerable<CostRow>;
@@ -269,6 +306,10 @@ namespace Math_Model_All_Work
             return Math.Max(count, DefaultTransportRowCount);
         }
 
+        /// <summary>
+        /// Копирует строки матрицы стоимостей из таблицы в обычный список,
+        /// чтобы экспорт и расчеты работали с независимыми данными.
+        /// </summary>
         private List<CostRow> GetCostMatrixRows()
         {
             var rows = CostMatrix.ItemsSource as IEnumerable<CostRow>;
@@ -278,6 +319,10 @@ namespace Math_Model_All_Work
             return rows.Select(row => row.Clone()).ToList();
         }
 
+        /// <summary>
+        /// Загружает набор строк в таблицу стоимостей через копию,
+        /// чтобы изменения в UI не портили исходные объекты.
+        /// </summary>
         private void SetCostMatrixRows(IEnumerable<CostRow> rows)
         {
             CostMatrix.ItemsSource = rows.Select(row => row.Clone()).ToList();
@@ -287,6 +332,7 @@ namespace Math_Model_All_Work
 
         #region Import / Export
 
+        // Кнопка импорта Excel: загружает сохраненный шаблон и восстанавливает его на форме.
         private void ImportExcel_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -309,6 +355,7 @@ namespace Math_Model_All_Work
             }
         }
 
+        // Кнопка экспорта: сохраняет либо Excel-шаблон для будущего импорта, либо текстовый результат расчета.
         private void Export_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -349,6 +396,7 @@ namespace Math_Model_All_Work
 
         #region Calculation Dispatcher
 
+        // Кнопка расчета: запускает нужный алгоритм в зависимости от выбранного типа задачи.
         private void CalcBtn_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -383,6 +431,9 @@ namespace Math_Model_All_Work
         // =========================
         #region // СМО
         // =========================
+        /// <summary>
+        /// Выполняет расчет для выбранного режима СМО и записывает в результат только итоговые вычисленные показатели.
+        /// </summary>
         private void SolveSmo()
         {
             double lambda = ReadDouble(LambdaBox.Text);
@@ -395,8 +446,6 @@ namespace Math_Model_All_Work
             if (timeInput < 0) throw new Exception("t должно быть ≥ 0.");
 
             var sb = new StringBuilder();
-            sb.AppendLine("Тип: Система массового обслуживания");
-            sb.AppendLine();
 
             switch (SmoModeBox.SelectedIndex)
             {
@@ -405,10 +454,6 @@ namespace Math_Model_All_Work
                         double mu = ResolveServiceRate(muInput, timeInput);
                         ValidateServiceRate(mu);
 
-                        sb.AppendLine("Режим расчета: Универсальный M/M/n/K");
-                        sb.AppendLine();
-                        Print(sb, ("λ", lambda), ("μ", mu), ("n", n), ("K", K));
-                        sb.AppendLine();
                         AppendFinite(lambda, mu, n, K, sb);
                         break;
                     }
@@ -417,10 +462,6 @@ namespace Math_Model_All_Work
                         double mu = ResolveServiceRate(muInput, timeInput);
                         ValidateServiceRate(mu);
 
-                        sb.AppendLine("Режим расчета: Одноканальная с отказами (M/M/1/1)");
-                        sb.AppendLine();
-                        Print(sb, ("λ", lambda), ("μ", mu));
-                        sb.AppendLine();
                         AppendSingleLoss(lambda, mu, sb);
                         break;
                     }
@@ -429,10 +470,6 @@ namespace Math_Model_All_Work
                         double mu = ResolveServiceRate(muInput, timeInput);
                         ValidateServiceRate(mu);
 
-                        sb.AppendLine("Режим расчета: Многоканальная с отказами (M/M/n/n)");
-                        sb.AppendLine();
-                        Print(sb, ("λ", lambda), ("μ", mu), ("n", n));
-                        sb.AppendLine();
                         AppendMultiLoss(lambda, mu, n, sb);
                         break;
                     }
@@ -441,10 +478,6 @@ namespace Math_Model_All_Work
                         double mu = ResolveServiceRate(muInput, timeInput);
                         ValidateServiceRate(mu);
 
-                        sb.AppendLine("Режим расчета: Одноканальная с бесконечной очередью (M/M/1)");
-                        sb.AppendLine();
-                        Print(sb, ("λ", lambda), ("μ", mu));
-                        sb.AppendLine();
                         AppendMM1(lambda, mu, sb);
                         break;
                     }
@@ -453,10 +486,6 @@ namespace Math_Model_All_Work
                         double mu = ResolveServiceRate(muInput, timeInput);
                         ValidateServiceRate(mu);
 
-                        sb.AppendLine("Режим расчета: Многоканальная с бесконечной очередью (M/M/n)");
-                        sb.AppendLine();
-                        Print(sb, ("λ", lambda), ("μ", mu), ("n", n));
-                        sb.AppendLine();
                         AppendMMn(lambda, mu, n, sb);
                         break;
                     }
@@ -465,10 +494,6 @@ namespace Math_Model_All_Work
                         double mu = ResolveServiceRate(muInput, timeInput);
                         ValidateServiceRate(mu);
 
-                        sb.AppendLine("Режим расчета: Одноканальная с фиксированным временем обслуживания (M/D/1)");
-                        sb.AppendLine();
-                        Print(sb, ("λ", lambda), ("μ", mu), ("t", timeInput));
-                        sb.AppendLine();
                         AppendFixed(lambda, mu, sb);
                         break;
                     }
@@ -477,10 +502,6 @@ namespace Math_Model_All_Work
                         ValidateServiceRate(muInput);
                         if (timeInput <= 0) throw new Exception("t ожидания должно быть > 0.");
 
-                        sb.AppendLine("Режим расчета: Ограниченное время ожидания");
-                        sb.AppendLine();
-                        Print(sb, ("λ", lambda), ("μ", muInput), ("tожид", timeInput));
-                        sb.AppendLine();
                         AppendImpatient(lambda, muInput, timeInput, sb);
                         break;
                     }
@@ -491,16 +512,26 @@ namespace Math_Model_All_Work
             ResultText.Text = sb.ToString().TrimEnd();
         }
 
+        /// <summary>
+        /// Определяет интенсивность обслуживания:
+        /// либо берет введенное μ, либо вычисляет его как 1 / t обслуживания.
+        /// </summary>
         private static double ResolveServiceRate(double mu, double serviceTime)
         {
             return serviceTime > 0 ? 1.0 / serviceTime : mu;
         }
 
+        /// <summary>
+        /// Проверяет, что интенсивность обслуживания допустима для формул СМО.
+        /// </summary>
         private static void ValidateServiceRate(double mu)
         {
             if (mu <= 0) throw new Exception("μ должно быть > 0.");
         }
 
+        /// <summary>
+        /// Добавляет показатели для одноканальной СМО с отказами M/M/1/1.
+        /// </summary>
         private void AppendSingleLoss(double lambda, double mu, StringBuilder sb)
         {
             double p0 = mu / (lambda + mu);
@@ -516,10 +547,14 @@ namespace Math_Model_All_Work
                 ("Pотк", pBlock), ("Q", q), ("A", a), ("k̄", kBar));
         }
 
+        /// <summary>
+        /// Добавляет показатели для многоканальной СМО с отказами по формуле Эрланга B.
+        /// </summary>
         private void AppendMultiLoss(double lambda, double mu, int n, StringBuilder sb)
         {
             double rho = lambda / mu;
 
+            // Находим вероятность пустой системы через сумму вероятностей всех допустимых состояний.
             double p0 = 1.0 / Enumerable.Range(0, n + 1)
                                          .Select(k => Math.Pow(rho, k) / Fact(k))
                                          .Sum();
@@ -534,6 +569,9 @@ namespace Math_Model_All_Work
                 ("Q", q), ("A", a), ("k̄", kBar));
         }
 
+        /// <summary>
+        /// Добавляет показатели для одноканальной СМО с бесконечной очередью M/M/1.
+        /// </summary>
         private void AppendMM1(double lambda, double mu, StringBuilder sb)
         {
             double rho = lambda / mu;
@@ -553,12 +591,16 @@ namespace Math_Model_All_Work
                 ("Tоч", tQ), ("Tсист", tSys));
         }
 
+        /// <summary>
+        /// Добавляет показатели для многоканальной СМО с бесконечной очередью M/M/n.
+        /// </summary>
         private void AppendMMn(double lambda, double mu, int n, StringBuilder sb)
         {
             double rho = lambda / mu;
             if (rho / n >= 1.0)
                 throw new Exception("Для M/M/n требуется ρ/n < 1.");
 
+            // Первая сумма учитывает состояния без очереди, хвостовой член — состояния ожидания.
             double sum = Enumerable.Range(0, n)
                                    .Select(k => Math.Pow(rho, k) / Fact(k))
                                    .Sum();
@@ -579,11 +621,16 @@ namespace Math_Model_All_Work
                 ("Tоч", tQ), ("Tсист", tSys));
         }
 
+        /// <summary>
+        /// Добавляет показатели для конечной системы M/M/n/K,
+        /// где число заявок в системе ограничено сверху.
+        /// </summary>
         private void AppendFinite(double lambda, double mu, int n, int K, StringBuilder sb)
         {
             double[] p = new double[K + 1];
             p[0] = 1.0;
 
+            // Рекуррентно восстанавливаем вероятности состояний до K заявок.
             for (int k = 1; k <= K; k++)
             {
                 double lambdaK = lambda;
@@ -591,6 +638,7 @@ namespace Math_Model_All_Work
                 p[k] = p[k - 1] * (lambdaK / muK);
             }
 
+            // После нормировки массив p превращается в корректное распределение вероятностей.
             double norm = p.Sum();
             for (int k = 0; k <= K; k++)
                 p[k] /= norm;
@@ -618,6 +666,9 @@ namespace Math_Model_All_Work
                 ("Tоч", tQ), ("Tсист", tSys));
         }
 
+        /// <summary>
+        /// Добавляет показатели для модели M/D/1 с фиксированным временем обслуживания.
+        /// </summary>
         private void AppendFixed(double lambda, double mu, StringBuilder sb)
         {
             double rho = lambda / mu;
@@ -634,6 +685,10 @@ namespace Math_Model_All_Work
                 ("Lсист", lSys), ("Tсист", tSys));
         }
 
+        /// <summary>
+        /// Добавляет показатели для модели с ограниченным временем ожидания,
+        /// где часть заявок покидает систему, не дождавшись обслуживания.
+        /// </summary>
         private void AppendImpatient(double lambda, double mu, double maxWaitTime, StringBuilder sb)
         {
             double rho = lambda / mu;
@@ -655,6 +710,9 @@ namespace Math_Model_All_Work
                 ("A", a));
         }
 
+        /// <summary>
+        /// Вычисляет факториал натурального числа для формул Эрланга.
+        /// </summary>
         private static long Fact(int n)
         {
             if (n < 2) return 1;
@@ -670,6 +728,10 @@ namespace Math_Model_All_Work
         // =========================
         #region // Транспортная задача
         // =========================
+        /// <summary>
+        /// Решает транспортную задачу методом северо-западного угла
+        /// и показывает только итоговый план перевозок и суммарные издержки.
+        /// </summary>
         private void SolveTransportNorthWest()
         {
             int[] supply = ParseIntArray(SupplyInput.Text);
@@ -685,13 +747,15 @@ namespace Math_Model_All_Work
             int totalCost = CalculateTransportCost(result, cost);
 
             ResultText.Text =
-                "Тип: Транспортная задача\n" +
-                "Метод: Северо-западный угол\n\n" +
                 "План перевозок:\n" +
                 MatrixToString(result) +
                 "\nТранспортные издержки: " + totalCost;
         }
 
+        /// <summary>
+        /// Решает транспортную задачу методом минимального элемента
+        /// и показывает только итоговый план перевозок и суммарные издержки.
+        /// </summary>
         private void SolveTransportLeastCost()
         {
             int[] supply = ParseIntArray(SupplyInput.Text);
@@ -707,13 +771,15 @@ namespace Math_Model_All_Work
             int totalCost = CalculateTransportCost(result, cost);
 
             ResultText.Text =
-                "Тип: Транспортная задача\n" +
-                "Метод: Минимальный элемент\n\n" +
                 "План перевозок:\n" +
                 MatrixToString(result) +
                 "\nТранспортные издержки: " + totalCost;
         }
 
+        /// <summary>
+        /// Преобразует табличный ввод стоимости перевозок в двумерную матрицу,
+        /// с которой уже работают алгоритмы транспортной задачи.
+        /// </summary>
         private int[,] GetCostMatrix(List<CostRow> costMatrix, int rows, int cols)
         {
             if (rows > costMatrix.Count)
@@ -726,6 +792,8 @@ namespace Math_Model_All_Work
 
             for (int i = 0; i < rows; i++)
             {
+                // DataGrid хранит строку как объект с пятью полями,
+                // поэтому сначала собираем их в обычный массив.
                 int[] rowValues = new int[]
                 {
                     costMatrix[i].V1,
@@ -742,6 +810,10 @@ namespace Math_Model_All_Work
             return cost;
         }
 
+        /// <summary>
+        /// Строит опорный план методом северо-западного угла:
+        /// последовательно заполняет таблицу, начиная с левой верхней клетки.
+        /// </summary>
         private int[,] NorthWestCornerMethod(int[] supply, int[] demand, int[,] cost)
         {
             int rows = supply.Length;
@@ -752,6 +824,8 @@ namespace Math_Model_All_Work
 
             while (i < rows && j < cols)
             {
+                // В текущую клетку отправляем максимально возможный объем,
+                // не превышая ни запас поставщика, ни спрос потребителя.
                 int allocation = Math.Min(supply[i], demand[j]);
                 result[i, j] = allocation;
 
@@ -776,6 +850,10 @@ namespace Math_Model_All_Work
             return result;
         }
 
+        /// <summary>
+        /// Строит план перевозок методом минимального элемента:
+        /// на каждом шаге выбирает самую дешевую еще доступную клетку.
+        /// </summary>
         private int[,] LeastCostMethod(int[] supply, int[] demand, int[,] cost)
         {
             int rows = supply.Length;
@@ -790,6 +868,7 @@ namespace Math_Model_All_Work
                 int minCost = int.MaxValue;
                 int minI = -1, minJ = -1;
 
+                // Ищем клетку с минимальной стоимостью среди еще не закрытых строк и столбцов.
                 for (int i = 0; i < rows; i++)
                 {
                     if (rowClosed[i]) continue;
@@ -823,6 +902,9 @@ namespace Math_Model_All_Work
             return result;
         }
 
+        /// <summary>
+        /// Вычисляет суммарные транспортные издержки для готового плана перевозок.
+        /// </summary>
         private int CalculateTransportCost(int[,] result, int[,] cost)
         {
             int totalCost = 0;
@@ -834,6 +916,10 @@ namespace Math_Model_All_Work
             return totalCost;
         }
 
+        /// <summary>
+        /// Преобразует числовую матрицу в многострочный текст,
+        /// который удобно показывать в поле результата и экспортировать в Excel.
+        /// </summary>
         private string MatrixToString(int[,] matrix)
         {
             var sb = new StringBuilder();
@@ -854,6 +940,9 @@ namespace Math_Model_All_Work
         // =========================
         #region // Симплекс
         // =========================
+        /// <summary>
+        /// Проверяет ввод симплекс-задачи, решает ее и выводит только найденный оптимальный план и значение целевой функции.
+        /// </summary>
         private void SolveSimplexTask()
         {
             double[] c = ParseDoubleArraySpace(ObjectiveInput.Text);
@@ -875,9 +964,6 @@ namespace Math_Model_All_Work
             var result = SolveSimplex(a, b, c);
 
             var sb = new StringBuilder();
-            sb.AppendLine("Тип: Симплекс-метод");
-            sb.AppendLine("Результат:");
-            sb.AppendLine();
 
             for (int i = 0; i < result.solution.Length; i++)
                 sb.AppendLine($"x{i + 1,-5} = {Math.Round(result.solution[i], 3):0.###}");
@@ -887,6 +973,10 @@ namespace Math_Model_All_Work
             ResultText.Text = sb.ToString();
         }
 
+        /// <summary>
+        /// Решает задачу линейного программирования симплекс-методом
+        /// в стандартной форме с ограничениями вида A * x <= b.
+        /// </summary>
         private (double[] solution, double optimum) SolveSimplex(double[,] A, double[] b, double[] c)
         {
             int m = A.GetLength(0);
@@ -897,6 +987,8 @@ namespace Math_Model_All_Work
 
             double[,] tableau = new double[rows, cols];
 
+            // Верхняя часть таблицы содержит матрицу ограничений,
+            // добавленные базисные переменные и правую часть.
             for (int i = 0; i < m; i++)
             {
                 for (int j = 0; j < n; j++)
@@ -914,6 +1006,7 @@ namespace Math_Model_All_Work
                 int pivotCol = -1;
                 double minValue = 0;
 
+                // Опорный столбец выбираем по самому отрицательному коэффициенту в строке цели.
                 for (int j = 0; j < cols - 1; j++)
                 {
                     if (tableau[m, j] < minValue)
@@ -929,6 +1022,7 @@ namespace Math_Model_All_Work
                 int pivotRow = -1;
                 double minRatio = double.MaxValue;
 
+                // Опорная строка определяется по правилу минимального положительного отношения.
                 for (int i = 0; i < m; i++)
                 {
                     if (tableau[i, pivotCol] > 1e-9)
@@ -950,6 +1044,7 @@ namespace Math_Model_All_Work
 
             double[] solution = new double[n];
 
+            // Восстанавливаем значения исходных переменных по базисным столбцам итоговой таблицы.
             for (int j = 0; j < n; j++)
             {
                 int oneRow = -1;
@@ -983,6 +1078,9 @@ namespace Math_Model_All_Work
             return (solution, optimum);
         }
 
+        /// <summary>
+        /// Выполняет один шаг Жорданова исключения для выбранного разрешающего элемента.
+        /// </summary>
         private void Pivot(double[,] tableau, int pivotRow, int pivotCol)
         {
             int rows = tableau.GetLength(0);
@@ -990,9 +1088,11 @@ namespace Math_Model_All_Work
 
             double pivot = tableau[pivotRow, pivotCol];
 
+            // Сначала нормируем опорную строку, чтобы в разрешающем столбце получить единицу.
             for (int j = 0; j < cols; j++)
                 tableau[pivotRow, j] /= pivot;
 
+            // Затем зануляем остальные элементы разрешающего столбца.
             for (int i = 0; i < rows; i++)
             {
                 if (i == pivotRow) continue;
@@ -1008,6 +1108,9 @@ namespace Math_Model_All_Work
         // =========================
         // Вспомогательное
         // =========================
+        /// <summary>
+        /// Читает вещественное число из текстового поля, поддерживая и точку, и запятую.
+        /// </summary>
         private static double ReadDouble(string s)
         {
             s = s.Replace(',', '.');
@@ -1016,6 +1119,9 @@ namespace Math_Model_All_Work
             return v;
         }
 
+        /// <summary>
+        /// Читает целое число и дополнительно проверяет нижнюю границу допустимого значения.
+        /// </summary>
         private static int ReadInt(string s, int min = 0)
         {
             if (!int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
@@ -1024,6 +1130,9 @@ namespace Math_Model_All_Work
             return v;
         }
 
+        /// <summary>
+        /// Разбирает список целых чисел, разделенных запятыми, пробелами или точками с запятой.
+        /// </summary>
         private static int[] ParseIntArray(string text)
         {
             return text.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
@@ -1031,6 +1140,9 @@ namespace Math_Model_All_Work
                        .ToArray();
         }
 
+        /// <summary>
+        /// Разбирает одномерный массив вещественных коэффициентов для целевой функции и вектора b.
+        /// </summary>
         private static double[] ParseDoubleArraySpace(string text)
         {
             return text.Split(new[] { ' ', ';', '\t', ',', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
@@ -1038,6 +1150,9 @@ namespace Math_Model_All_Work
                        .ToArray();
         }
 
+        /// <summary>
+        /// Преобразует многострочный текст в матрицу коэффициентов ограничений.
+        /// </summary>
         private static double[,] ParseMatrix(string text)
         {
             var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -1063,6 +1178,9 @@ namespace Math_Model_All_Work
             return matrix;
         }
 
+        /// <summary>
+        /// Печатает набор числовых показателей в виде столбца `имя = значение`.
+        /// </summary>
         private static void Print(StringBuilder sb, params (string name, double val)[] pairs)
         {
             foreach (var (name, val) in pairs)
@@ -1070,12 +1188,13 @@ namespace Math_Model_All_Work
         }
     }
 
+    /// <summary>
+    /// Хранит все данные шаблона, которые могут быть сохранены в Excel или восстановлены из него.
+    /// </summary>
     internal sealed class AppTemplateData
     {
         public int TaskIndex { get; set; }
-        public string TaskName { get; set; } = string.Empty;
         public int SmoModeIndex { get; set; }
-        public string SmoModeName { get; set; } = string.Empty;
         public string Lambda { get; set; } = string.Empty;
         public string Mu { get; set; } = string.Empty;
         public string ServiceTime { get; set; } = string.Empty;
@@ -1090,6 +1209,9 @@ namespace Math_Model_All_Work
         public List<CostRow> CostRows { get; set; } = new List<CostRow>();
     }
 
+    /// <summary>
+    /// Представляет одну строку матрицы стоимостей транспортной задачи.
+    /// </summary>
     public sealed class CostRow
     {
         public int V1 { get; set; }
@@ -1098,6 +1220,9 @@ namespace Math_Model_All_Work
         public int V4 { get; set; }
         public int V5 { get; set; }
 
+        /// <summary>
+        /// Создает копию строки, чтобы UI и экспорт работали с независимыми объектами.
+        /// </summary>
         public CostRow Clone()
         {
             return new CostRow
@@ -1111,12 +1236,23 @@ namespace Math_Model_All_Work
         }
     }
 
+    /// <summary>
+    /// Выполняет экспорт и импорт упрощенного Excel-шаблона без лишних служебных полей в видимой таблице.
+    /// </summary>
     internal static class ExcelTemplateService
     {
         private const string FormatKey = "__format";
-        private const string FormatValue = "MathModelAllWork.Excel.v1";
+        private const string FormatValueV1 = "MathModelAllWork.Excel.v1";
+        private const string FormatValueV2 = "MathModelAllWork.Excel.v2";
+        private const string TransportMethodKey = "TransportMethod";
+        private const string TransportMethodNorthWest = "NorthWest";
+        private const string TransportMethodLeastCost = "LeastCost";
+        private const string ResultLineKeyPrefix = "Result.";
         private static readonly XNamespace SpreadsheetNamespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
+        /// <summary>
+        /// Сохраняет данные шаблона в XLSX-файл OpenXML, не используя внешние Excel-библиотеки.
+        /// </summary>
         public static void Export(string filePath, AppTemplateData data)
         {
             if (data == null)
@@ -1125,26 +1261,7 @@ namespace Math_Model_All_Work
             if (File.Exists(filePath))
                 File.Delete(filePath);
 
-            var rows = new List<string[]>
-            {
-                Row(FormatKey, FormatValue),
-                Row(nameof(AppTemplateData.TaskIndex), data.TaskIndex),
-                Row(nameof(AppTemplateData.TaskName), data.TaskName),
-                Row(nameof(AppTemplateData.SmoModeIndex), data.SmoModeIndex),
-                Row(nameof(AppTemplateData.SmoModeName), data.SmoModeName),
-                Row(nameof(AppTemplateData.Lambda), data.Lambda),
-                Row(nameof(AppTemplateData.Mu), data.Mu),
-                Row(nameof(AppTemplateData.ServiceTime), data.ServiceTime),
-                Row(nameof(AppTemplateData.Channels), data.Channels),
-                Row(nameof(AppTemplateData.SystemCapacity), data.SystemCapacity),
-                Row(nameof(AppTemplateData.Supply), data.Supply),
-                Row(nameof(AppTemplateData.Demand), data.Demand),
-                Row(nameof(AppTemplateData.Objective), data.Objective),
-                Row(nameof(AppTemplateData.Matrix), data.Matrix),
-                Row(nameof(AppTemplateData.B), data.B),
-                Row(nameof(AppTemplateData.ResultText), data.ResultText),
-                Row(nameof(AppTemplateData.CostRows), SerializeCostRows(data.CostRows))
-            };
+            List<string[]> rows = BuildRows(data);
 
             using (var archive = ZipFile.Open(filePath, ZipArchiveMode.Create))
             {
@@ -1175,21 +1292,27 @@ namespace Math_Model_All_Work
             }
         }
 
+        /// <summary>
+        /// Загружает Excel-файл, восстановливает данные формы и поддерживает старые версии формата.
+        /// </summary>
         public static AppTemplateData Import(string filePath)
         {
             using (var archive = ZipFile.OpenRead(filePath))
             {
                 Dictionary<string, string> rows = ReadRows(archive);
+                string format = ReadString(rows, FormatKey);
 
-                if (!string.Equals(ReadString(rows, FormatKey), FormatValue, StringComparison.Ordinal))
-                    throw new InvalidDataException("Поддерживается только Excel-файл, экспортированный этой программой в новом упрощенном формате.");
+                if (!string.IsNullOrWhiteSpace(format) &&
+                    !string.Equals(format, FormatValueV1, StringComparison.Ordinal) &&
+                    !string.Equals(format, FormatValueV2, StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException("Поддерживается только Excel-файл, экспортированный этой программой в поддерживаемом формате.");
+                }
 
                 return new AppTemplateData
                 {
-                    TaskIndex = ReadInt(rows, nameof(AppTemplateData.TaskIndex)),
-                    TaskName = ReadString(rows, nameof(AppTemplateData.TaskName)),
+                    TaskIndex = InferTaskIndex(rows),
                     SmoModeIndex = ReadInt(rows, nameof(AppTemplateData.SmoModeIndex)),
-                    SmoModeName = ReadString(rows, nameof(AppTemplateData.SmoModeName)),
                     Lambda = ReadString(rows, nameof(AppTemplateData.Lambda)),
                     Mu = ReadString(rows, nameof(AppTemplateData.Mu)),
                     ServiceTime = ReadString(rows, nameof(AppTemplateData.ServiceTime)),
@@ -1200,12 +1323,58 @@ namespace Math_Model_All_Work
                     Objective = ReadString(rows, nameof(AppTemplateData.Objective)),
                     Matrix = ReadString(rows, nameof(AppTemplateData.Matrix)),
                     B = ReadString(rows, nameof(AppTemplateData.B)),
-                    ResultText = ReadString(rows, nameof(AppTemplateData.ResultText)),
+                    ResultText = ReadResultText(rows),
                     CostRows = ParseCostRows(ReadString(rows, nameof(AppTemplateData.CostRows)))
                 };
             }
         }
 
+        /// <summary>
+        /// Формирует набор строк Excel только из нужных входных данных текущей задачи и строк результата.
+        /// </summary>
+        private static List<string[]> BuildRows(AppTemplateData data)
+        {
+            var rows = new List<string[]>();
+
+            switch (data.TaskIndex)
+            {
+                case 0:
+                    rows.Add(Row(nameof(AppTemplateData.SmoModeIndex), data.SmoModeIndex));
+                    rows.Add(Row(nameof(AppTemplateData.Lambda), data.Lambda));
+                    rows.Add(Row(nameof(AppTemplateData.Mu), data.Mu));
+                    rows.Add(Row(nameof(AppTemplateData.ServiceTime), data.ServiceTime));
+                    rows.Add(Row(nameof(AppTemplateData.Channels), data.Channels));
+                    rows.Add(Row(nameof(AppTemplateData.SystemCapacity), data.SystemCapacity));
+                    break;
+
+                case 1:
+                    rows.Add(Row(TransportMethodKey, TransportMethodNorthWest));
+                    rows.Add(Row(nameof(AppTemplateData.Supply), data.Supply));
+                    rows.Add(Row(nameof(AppTemplateData.Demand), data.Demand));
+                    rows.Add(Row(nameof(AppTemplateData.CostRows), SerializeCostRows(data.CostRows)));
+                    break;
+
+                case 2:
+                    rows.Add(Row(TransportMethodKey, TransportMethodLeastCost));
+                    rows.Add(Row(nameof(AppTemplateData.Supply), data.Supply));
+                    rows.Add(Row(nameof(AppTemplateData.Demand), data.Demand));
+                    rows.Add(Row(nameof(AppTemplateData.CostRows), SerializeCostRows(data.CostRows)));
+                    break;
+
+                case 3:
+                    rows.Add(Row(nameof(AppTemplateData.Objective), data.Objective));
+                    rows.Add(Row(nameof(AppTemplateData.Matrix), data.Matrix));
+                    rows.Add(Row(nameof(AppTemplateData.B), data.B));
+                    break;
+            }
+
+            AppendResultRows(rows, data.ResultText);
+            return rows;
+        }
+
+        /// <summary>
+        /// Записывает содержимое в указанный файл внутри ZIP-архива XLSX.
+        /// </summary>
         private static void WriteEntry(ZipArchive archive, string entryPath, string content)
         {
             var entry = archive.CreateEntry(entryPath, CompressionLevel.Optimal);
@@ -1213,6 +1382,9 @@ namespace Math_Model_All_Work
                 writer.Write(content);
         }
 
+        /// <summary>
+        /// Собирает XML-представление листа Excel из подготовленного списка строк.
+        /// </summary>
         private static string BuildWorksheetXml(IEnumerable<string[]> rows)
         {
             var sheetData = new XElement(
@@ -1236,6 +1408,10 @@ namespace Math_Model_All_Work
                        .ToString(SaveOptions.DisableFormatting);
         }
 
+        /// <summary>
+        /// Читает лист Excel в словарь `ключ -> значение`,
+        /// где каждая строка листа соответствует одной логической записи.
+        /// </summary>
         private static Dictionary<string, string> ReadRows(ZipArchive archive)
         {
             XDocument worksheet = LoadXml(archive, "xl/worksheets/sheet1.xml");
@@ -1257,6 +1433,9 @@ namespace Math_Model_All_Work
             return result;
         }
 
+        /// <summary>
+        /// Загружает таблицу общих строк, если Excel решил хранить текст не прямо в ячейках.
+        /// </summary>
         private static IReadOnlyList<string> ReadSharedStrings(ZipArchive archive)
         {
             var entry = archive.GetEntry("xl/sharedStrings.xml");
@@ -1272,6 +1451,9 @@ namespace Math_Model_All_Work
             }
         }
 
+        /// <summary>
+        /// Загружает XML-документ из нужной части XLSX-архива.
+        /// </summary>
         private static XDocument LoadXml(ZipArchive archive, string entryPath)
         {
             var entry = archive.GetEntry(entryPath);
@@ -1282,6 +1464,10 @@ namespace Math_Model_All_Work
                 return XDocument.Load(stream);
         }
 
+        /// <summary>
+        /// Читает текстовое содержимое отдельной ячейки Excel независимо от того,
+        /// хранится ли оно прямо в ячейке или через таблицу общих строк.
+        /// </summary>
         private static string ReadCellValue(XElement cell, IReadOnlyList<string> sharedStrings)
         {
             string type = (string)cell.Attribute("t");
@@ -1299,6 +1485,9 @@ namespace Math_Model_All_Work
             return value;
         }
 
+        /// <summary>
+        /// Преобразует матрицу стоимостей в компактный текстовый формат для одной ячейки Excel.
+        /// </summary>
         private static string SerializeCostRows(IEnumerable<CostRow> rows)
         {
             return string.Join(
@@ -1314,6 +1503,10 @@ namespace Math_Model_All_Work
                     })));
         }
 
+        /// <summary>
+        /// Восстанавливает строки матрицы стоимостей из текстового представления,
+        /// сохраненного в Excel-файле.
+        /// </summary>
         private static List<CostRow> ParseCostRows(string rawValue)
         {
             return (rawValue ?? string.Empty)
@@ -1331,16 +1524,25 @@ namespace Math_Model_All_Work
                 .ToList();
         }
 
+        /// <summary>
+        /// Читает целое значение из словаря Excel-данных по указанному ключу.
+        /// </summary>
         private static int ReadInt(IReadOnlyDictionary<string, string> values, string key)
         {
             return ParseInt(ReadString(values, key));
         }
 
+        /// <summary>
+        /// Читает строковое значение по ключу. Если ключ отсутствует, возвращает пустую строку.
+        /// </summary>
         private static string ReadString(IReadOnlyDictionary<string, string> values, string key)
         {
             return values.TryGetValue(key, out string rawValue) ? rawValue ?? string.Empty : string.Empty;
         }
 
+        /// <summary>
+        /// Преобразует текст из Excel в целое число, допуская хранение как integer, так и floating-point.
+        /// </summary>
         private static int ParseInt(string rawValue)
         {
             if (string.IsNullOrWhiteSpace(rawValue))
@@ -1355,9 +1557,108 @@ namespace Math_Model_All_Work
             throw new InvalidDataException($"Не удалось прочитать число из Excel: \"{rawValue}\".");
         }
 
+        /// <summary>
+        /// Создает строку Excel из пары `ключ - значение`.
+        /// </summary>
         private static string[] Row(string key, object value)
         {
             return new[] { key, Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty };
+        }
+
+        /// <summary>
+        /// Добавляет в экспорт результат расчета как набор отдельных строк,
+        /// чтобы Excel отображал его раздельно, а не одним слитым блоком текста.
+        /// </summary>
+        private static void AppendResultRows(ICollection<string[]> rows, string resultText)
+        {
+            string[] resultLines = SplitResultLines(resultText).ToArray();
+            if (resultLines.Length == 0)
+                return;
+
+            rows.Add(new[] { string.Empty, string.Empty });
+
+            for (int index = 0; index < resultLines.Length; index++)
+                rows.Add(Row(ResultLineKeyPrefix + (index + 1).ToString(CultureInfo.InvariantCulture), resultLines[index]));
+        }
+
+        /// <summary>
+        /// Разбивает результат по строкам и отбрасывает пустые строки,
+        /// чтобы экспорт выглядел компактно и читабельно.
+        /// </summary>
+        private static IEnumerable<string> SplitResultLines(string resultText)
+        {
+            return (resultText ?? string.Empty)
+                .Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None)
+                .Select(line => line.TrimEnd())
+                .Where(line => !string.IsNullOrWhiteSpace(line));
+        }
+
+        /// <summary>
+        /// Собирает текст результата обратно либо из старого поля ResultText,
+        /// либо из нового набора Result.1, Result.2, ...
+        /// </summary>
+        private static string ReadResultText(IReadOnlyDictionary<string, string> values)
+        {
+            string singleResult = ReadString(values, nameof(AppTemplateData.ResultText));
+            if (!string.IsNullOrWhiteSpace(singleResult))
+                return singleResult;
+
+            return string.Join(
+                Environment.NewLine,
+                values
+                    .Where(pair => pair.Key.StartsWith(ResultLineKeyPrefix, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(pair => ParseResultLineIndex(pair.Key))
+                    .Select(pair => pair.Value));
+        }
+
+        /// <summary>
+        /// Определяет индекс задачи по экспортированным полям, если явный TaskIndex отсутствует.
+        /// </summary>
+        private static int InferTaskIndex(IReadOnlyDictionary<string, string> values)
+        {
+            if (values.ContainsKey(nameof(AppTemplateData.TaskIndex)))
+                return ReadInt(values, nameof(AppTemplateData.TaskIndex));
+
+            if (values.ContainsKey(TransportMethodKey))
+                return ParseTransportTaskIndex(ReadString(values, TransportMethodKey));
+
+            if (HasAnyKey(values, nameof(AppTemplateData.Supply), nameof(AppTemplateData.Demand), nameof(AppTemplateData.CostRows)))
+                return 1;
+
+            if (HasAnyKey(values, nameof(AppTemplateData.Objective), nameof(AppTemplateData.Matrix), nameof(AppTemplateData.B)))
+                return 3;
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Определяет, присутствует ли в наборе данных хотя бы один из указанных ключей.
+        /// </summary>
+        private static bool HasAnyKey(IReadOnlyDictionary<string, string> values, params string[] keys)
+        {
+            return keys.Any(values.ContainsKey);
+        }
+
+        /// <summary>
+        /// Восстанавливает выбранный метод транспортной задачи из строки Excel.
+        /// </summary>
+        private static int ParseTransportTaskIndex(string rawValue)
+        {
+            if (string.Equals(rawValue, TransportMethodLeastCost, StringComparison.OrdinalIgnoreCase))
+                return 2;
+
+            return 1;
+        }
+
+        /// <summary>
+        /// Извлекает номер строки результата из ключа вида `Result.N`.
+        /// </summary>
+        private static int ParseResultLineIndex(string key)
+        {
+            string rawIndex = key.Substring(ResultLineKeyPrefix.Length);
+            return int.TryParse(rawIndex, NumberStyles.Integer, CultureInfo.InvariantCulture, out int index)
+                ? index
+                : int.MaxValue;
         }
     }
 }
